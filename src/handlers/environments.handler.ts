@@ -1,10 +1,12 @@
-import { Prisma } from '@prisma/client';
-import { Handler } from '../schema/handler.type';
+import {
+  CreateEnvironmentRouteInterface,
+  GetAllEnvironmentRouteInterface,
+} from '../types/environments.type';
+import { Handler } from '../types/handler.type';
 
-const create: Handler = (app) => {
+const create: Handler<CreateEnvironmentRouteInterface> = (app) => {
   return async (request, reply) => {
-    const { name, projectId, key } =
-      request.body as Prisma.EnvironmentUncheckedCreateInput;
+    const { name, projectId, key } = request.body;
     const environment = await app.prisma.environment.create({
       data: {
         name,
@@ -20,11 +22,14 @@ const create: Handler = (app) => {
   };
 };
 
-const getAll: Handler = (app) => {
+const getAll: Handler<GetAllEnvironmentRouteInterface> = (app) => {
   return async (request, reply) => {
+    const { projectId } = request.query;
+
     const environments = await app.prisma.environment.findMany({
       where: {
         ownerId: request.user.userId,
+        projectId,
       },
       select: {
         id: true,

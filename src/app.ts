@@ -3,12 +3,23 @@ import cookie, { type FastifyCookieOptions } from '@fastify/cookie';
 import cors, { type FastifyCorsOptions } from '@fastify/cors';
 import { fastifyEnv } from '@fastify/env';
 import { fastifyJwt } from '@fastify/jwt';
+import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+
 import Fastify, { FastifyInstance } from 'fastify';
+import {
+  serializerCompiler,
+  validatorCompiler,
+  ZodTypeProvider,
+} from 'fastify-type-provider-zod';
+import { ENV_SCHEMA } from './config/app.config';
 
 import authenticateUsingCookiePlugin from './plugins/authentication.plugin';
 import prisma from './plugins/prisma.plugin';
 
 export const initApp = async () => {
+  app.withTypeProvider<ZodTypeProvider>();
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
   await setupEnvConfig();
   setupCors();
   setupAuth();
@@ -32,7 +43,7 @@ const app: FastifyInstance = Fastify({
       },
     },
   },
-});
+}).withTypeProvider<JsonSchemaToTsProvider>();
 
 const setupEnvConfig = async (): Promise<void> => {
   await app.register(fastifyEnv, {

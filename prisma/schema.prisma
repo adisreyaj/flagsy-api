@@ -13,41 +13,69 @@ model User {
   firstName    String
   lastName     String
   password     String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  role         Role          @default(ADMIN)
   environments Environment[]
   projects     Project[]
   features     Feature[]
+  orgs         Org[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Org {
+  id           String        @id @default(cuid())
+  name         String
+  key          String
+  members      User[]
+  projects     Project[]
+  environments Environment[]
+  features     Feature[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Project {
-  id           String        @id @default(cuid())
-  key          String
-  name         String
-  description  String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  owner        User          @relation(fields: [ownerId], references: [id])
-  ownerId      String
+  id          String  @id @default(cuid())
+  key         String
+  name        String
+  description String?
+
+  org   Org    @relation(fields: [orgId], references: [id])
+  orgId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner   User   @relation(fields: [ownerId], references: [id])
+  ownerId String
+
   environments Environment[]
   Feature      Feature[]
 
-  @@unique([key, ownerId])
+  @@unique([key, orgId])
 }
 
 model Environment {
-  id        String                     @id @default(cuid())
-  key       String
-  name      String
-  project   Project                    @relation(fields: [projectId], references: [id])
-  projectId String
-  owner     User                       @relation(fields: [ownerId], references: [id])
-  ownerId   String
-  createdAt DateTime                   @default(now())
-  updatedAt DateTime                   @updatedAt
-  features  FeatureEnvironmentConfig[]
+  id       String                     @id @default(cuid())
+  key      String
+  name     String
+  features FeatureEnvironmentConfig[]
 
-  @@unique([key, projectId, ownerId])
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId String
+
+  org   Org    @relation(fields: [orgId], references: [id])
+  orgId String
+
+  owner   User   @relation(fields: [ownerId], references: [id])
+  ownerId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, projectId, orgId])
 }
 
 model Feature {
@@ -56,25 +84,34 @@ model Feature {
   type                 FeatureValueType
   value                Json
   description          String?
-  project              Project                    @relation(fields: [projectId], references: [id])
-  projectId            String
-  owner                User                       @relation(fields: [ownerId], references: [id])
-  ownerId              String
-  createdAt            DateTime                   @default(now())
-  updatedAt            DateTime                   @updatedAt
   environmentOverrides FeatureEnvironmentConfig[]
 
-  @@unique([key, projectId, ownerId])
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId String
+
+  org   Org    @relation(fields: [orgId], references: [id])
+  orgId String
+
+  owner   User   @relation(fields: [ownerId], references: [id])
+  ownerId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, projectId, orgId])
 }
 
 model FeatureEnvironmentConfig {
-  feature       Feature     @relation(fields: [featureId], references: [id])
-  featureId     String
+  value Json
+
+  feature   Feature @relation(fields: [featureId], references: [id])
+  featureId String
+
   environment   Environment @relation(fields: [environmentId], references: [id])
   environmentId String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  value         Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@id([environmentId, featureId])
 }
@@ -84,4 +121,9 @@ enum FeatureValueType {
   NUMBER
   STRING
   JSON
+}
+
+enum Role {
+  ADMIN
+  USER
 }

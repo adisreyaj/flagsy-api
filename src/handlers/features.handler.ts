@@ -1,5 +1,8 @@
-import { FeatureCreateData } from '../schema/feature.type';
-import { Handler } from '../schema/handler.type';
+import {
+  FeatureCreateData,
+  GetAllFeaturesRouteInterface,
+} from '../types/feature.type';
+import { Handler } from '../types/handler.type';
 
 const create: Handler = (app) => {
   return async (request, reply) => {
@@ -10,7 +13,12 @@ const create: Handler = (app) => {
       valueType: type,
     } = request.body as FeatureCreateData;
 
-    reply.log.debug({ projectId, key, value, type });
+    reply.log.debug({
+      projectId,
+      key,
+      value,
+      type,
+    });
 
     await app.prisma.feature.create({
       data: {
@@ -24,7 +32,7 @@ const create: Handler = (app) => {
         value,
         owner: {
           connect: {
-            id: 'clp4ey6r500009lxcg591c3or',
+            id: request.user.userId,
           },
         },
       },
@@ -37,15 +45,19 @@ const create: Handler = (app) => {
   };
 };
 
-const getAll: Handler = (app) => {
-  app.log.debug('Get All Features');
-
-  return async (_request, reply) => {
-    const projects = await app.prisma.feature.findMany({
+const getAll: Handler<GetAllFeaturesRouteInterface> = (app) => {
+  return async (request, reply) => {
+    const { environmentId, projectId } = request.query;
+    const features = await app.prisma.feature.findMany({
+      where: {
+        projectId,
+        ownerId: request.user.userId,
+      },
       select: {
         id: true,
         key: true,
         type: true,
+        value: true,
         project: {
           select: {
             id: true,
@@ -53,6 +65,9 @@ const getAll: Handler = (app) => {
           },
         },
         environmentOverrides: {
+          where: {
+            environmentId,
+          },
           select: {
             environment: {
               select: {
@@ -73,7 +88,22 @@ const getAll: Handler = (app) => {
         },
       },
     });
-    reply.send(projects);
+
+    const featuresWithEnvironmentSpecificInfo = features.map((feature) => {
+      const hasEnvOverride = feature.environmentOverrides.length > 0;
+      return {
+        id: feature.id,
+        key: feature.key,
+        type: feature.type,
+        project: feature.project,
+        value:
+          environmentId && hasEnvOverride
+            ? feature.environmentOverrides?.[0].value
+            : feature.value,
+      };
+    });
+
+    reply.send(featuresWithEnvironmentSpecificInfo);
   };
 };
 

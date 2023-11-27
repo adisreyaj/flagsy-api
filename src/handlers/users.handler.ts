@@ -1,4 +1,4 @@
-import { Handler } from '../schema/handler.type';
+import { Handler } from '../types/handler.type';
 
 const getAll: Handler = (app) => {
   return async (_request, reply) => {

@@ -1,21 +1,9 @@
 import { Prisma } from '@prisma/client';
 import { compare, genSalt, hash } from 'bcryptjs';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { Handler } from '../types/handler.type';
 
-import { Handler } from '../schema/handler.type';
-
-const setCookie = (reply: FastifyReply, jwt: string) => {
-  return reply.setCookie('token', jwt);
-};
-
-const generateJWT = async (
-  reply: FastifyReply,
-  userId: string,
-): Promise<string> => {
-  return await reply.jwtSign({
-    userId: userId,
-  });
-};
+import { AuthUtil } from '../util/auth.util';
 
 const register: Handler = (app: FastifyInstance) => {
   return async (request: FastifyRequest, reply: FastifyReply) => {
@@ -36,8 +24,32 @@ const register: Handler = (app: FastifyInstance) => {
         id: true,
       },
     });
-    const jwt = await generateJWT(reply, user.id);
-    setCookie(reply, jwt).send(user);
+    const jwt = await AuthUtil.generateJWT(reply, user.id);
+    AuthUtil.setCookie(reply, jwt);
+    reply.send(user);
+  };
+};
+
+const me: Handler = (app: FastifyInstance) => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = await app.prisma.user.findUnique({
+      where: {
+        id: request.user.userId,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      reply.send();
+      return;
+    }
+
+    reply.send(user);
   };
 };
 
@@ -50,8 +62,11 @@ const login: Handler = (app: FastifyInstance) => {
         email,
       },
       select: {
-        password: true,
         id: true,
+        firstName: true,
+        lastName: true,
+        password: true,
+        email: true,
       },
     });
 
@@ -66,12 +81,24 @@ const login: Handler = (app: FastifyInstance) => {
       throw new Error('Invalid email or password');
     }
 
-    const jwt = await generateJWT(reply, user.id);
+    const jwt = await AuthUtil.generateJWT(reply, user.id);
 
-    setCookie(reply, jwt).send({
-      message: 'Logged in successfully',
+    AuthUtil.setCookie(reply, jwt);
+    reply.send({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
     });
   };
 };
 
-export { register, login };
+const logout: Handler = () => {
+  return async (_request: FastifyRequest, reply: FastifyReply) => {
+    reply.clearCookie('token').send({
+      message: 'Logged out successfully',
+    });
+  };
+};
+
+export { register, login, logout, me };

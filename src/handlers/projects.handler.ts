@@ -1,15 +1,14 @@
 import { Prisma } from '@prisma/client';
-import { Handler } from '../schema/handler.type';
+import { Handler } from '../types/handler.type';
 
 const create: Handler = (app) => {
   return async (request, reply) => {
-    const { name, ownerId, key } =
-      request.body as Prisma.ProjectUncheckedCreateInput;
+    const { name, key } = request.body as Prisma.ProjectUncheckedCreateInput;
     const project = await app.prisma.project.create({
       data: {
         name,
         key,
-        ownerId,
+        ownerId: request.user.userId,
       },
       select: {
         id: true,
@@ -20,8 +19,11 @@ const create: Handler = (app) => {
 };
 
 const getAll: Handler = (app) => {
-  return async (_request, reply) => {
+  return async (request, reply) => {
     const projects = await app.prisma.project.findMany({
+      where: {
+        ownerId: request.user.userId,
+      },
       select: {
         id: true,
         name: true,

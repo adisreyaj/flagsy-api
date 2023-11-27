@@ -1,4 +1,4 @@
-const ENV_SCHEMA = {
+export const ENV_SCHEMA = {
   type: 'object',
   required: ['PORT', 'JWT_SECRET', 'COOKIE_SECRET'],
   properties: {
