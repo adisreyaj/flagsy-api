@@ -1,47 +1,85 @@
 import {
-  FeatureCreateData,
+  CreateFeatureRouteInterface,
   GetAllFeaturesRouteInterface,
 } from '../types/feature.type';
 import { Handler } from '../types/handler.type';
 
-const create: Handler = (app) => {
+const create: Handler<CreateFeatureRouteInterface> = (app) => {
   return async (request, reply) => {
     const {
       projectId,
       key,
       value,
+      description,
       valueType: type,
-    } = request.body as FeatureCreateData;
+    } = request.body;
 
-    reply.log.debug({
+    app.log.info({
       projectId,
       key,
       value,
       type,
     });
 
-    await app.prisma.feature.create({
-      data: {
-        project: {
-          connect: {
-            id: projectId,
-          },
+    try {
+      const feature = await app.prisma.feature.create({
+        data: {
+          projectId,
+          key,
+          type,
+          value,
+          ownerId: request.user.userId,
+          orgId: request.user.orgId,
+          description,
         },
-        key,
-        type,
-        value,
-        owner: {
-          connect: {
-            id: request.user.userId,
-          },
+        select: {
+          id: true,
         },
-      },
-      select: {
-        id: true,
-      },
-    });
+      });
 
-    reply.send('OK');
+      reply.status(201).send({
+        feature: {
+          id: feature.id,
+        },
+      });
+    } catch (e) {
+      reply.status(500).send({
+        message: 'Failed to create feature!',
+      });
+    }
+  };
+};
+
+const update: Handler<CreateFeatureRouteInterface> = (app) => {
+  return async (request, reply) => {
+    const { value, valueType: type, description } = request.body;
+    const { featureId } = request.params as { featureId: string };
+
+    try {
+      const feature = await app.prisma.feature.update({
+        where: {
+          id: featureId,
+        },
+        data: {
+          description,
+          type,
+          value,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      reply.status(201).send({
+        feature: {
+          id: feature.id,
+        },
+      });
+    } catch (e) {
+      reply.status(500).send({
+        message: 'Failed to update feature!',
+      });
+    }
   };
 };
 
@@ -58,6 +96,7 @@ const getAll: Handler<GetAllFeaturesRouteInterface> = (app) => {
         key: true,
         type: true,
         value: true,
+        description: true,
         project: {
           select: {
             id: true,
@@ -96,6 +135,7 @@ const getAll: Handler<GetAllFeaturesRouteInterface> = (app) => {
         key: feature.key,
         type: feature.type,
         project: feature.project,
+        description: feature.description,
         value:
           environmentId && hasEnvOverride
             ? feature.environmentOverrides?.[0].value
@@ -107,4 +147,4 @@ const getAll: Handler<GetAllFeaturesRouteInterface> = (app) => {
   };
 };
 
-export { create, getAll };
+export { create, getAll, update };

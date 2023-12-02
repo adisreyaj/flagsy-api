@@ -13,6 +13,7 @@ const create: Handler<CreateEnvironmentRouteInterface> = (app) => {
         key,
         ownerId: request.user.userId,
         projectId,
+        orgId: request.user.orgId,
       },
       select: {
         id: true,

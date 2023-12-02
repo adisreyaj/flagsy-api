@@ -9,6 +9,7 @@ const create: Handler = (app) => {
         name,
         key,
         ownerId: request.user.userId,
+        orgId: request.user.orgId,
       },
       select: {
         id: true,

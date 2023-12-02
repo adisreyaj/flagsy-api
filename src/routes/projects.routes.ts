@@ -14,7 +14,6 @@ export const PROJECT_ROUTES = async (app: FastifyInstance) => {
     method: 'POST',
     url: '/',
     preHandler: app.auth([app.validateToken]),
-
     handler: create(app),
   });
 };

@@ -66,11 +66,6 @@ const setupAuth = (): void => {
       cookieName: 'token',
       signed: true,
     },
-    formatUser: (user) => {
-      return {
-        userId: user.userId,
-      };
-    },
     sign: {
       algorithm: 'HS256',
       iss: 'flagsy.adi.so',

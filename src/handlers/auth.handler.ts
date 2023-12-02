@@ -2,13 +2,13 @@ import { Prisma } from '@prisma/client';
 import { compare, genSalt, hash } from 'bcryptjs';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { Handler } from '../types/handler.type';
+import { CreateUserRouteInterface } from '../types/user.type';
 
 import { AuthUtil } from '../util/auth.util';
 
-const register: Handler = (app: FastifyInstance) => {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
-    const { email, password, firstName, lastName } =
-      request.body as Prisma.UserCreateInput;
+const register: Handler<CreateUserRouteInterface> = (app: FastifyInstance) => {
+  return async (request, reply) => {
+    const { email, password, firstName, lastName, orgName } = request.body;
 
     const salt = await genSalt(10);
     const hashedPassword = await hash(password, salt);
@@ -19,12 +19,25 @@ const register: Handler = (app: FastifyInstance) => {
         password: hashedPassword,
         firstName,
         lastName,
+        orgs: {
+          create: {
+            name: orgName,
+            key: orgName.toLowerCase().replaceAll(' ', '-'),
+          },
+        },
       },
       select: {
         id: true,
+        orgs: {
+          take: 1,
+          select: {
+            id: true,
+          },
+        },
       },
     });
-    const jwt = await AuthUtil.generateJWT(reply, user.id);
+
+    const jwt = await AuthUtil.generateJWT(reply, user.id, user.orgs?.[0].id);
     AuthUtil.setCookie(reply, jwt);
     reply.send(user);
   };
@@ -67,6 +80,12 @@ const login: Handler = (app: FastifyInstance) => {
         lastName: true,
         password: true,
         email: true,
+        orgs: {
+          take: 1,
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
@@ -81,7 +100,7 @@ const login: Handler = (app: FastifyInstance) => {
       throw new Error('Invalid email or password');
     }
 
-    const jwt = await AuthUtil.generateJWT(reply, user.id);
+    const jwt = await AuthUtil.generateJWT(reply, user.id, user.orgs?.[0].id);
 
     AuthUtil.setCookie(reply, jwt);
     reply.send({

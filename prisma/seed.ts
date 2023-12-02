@@ -1,17 +1,27 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import cuid from 'cuid';
 
 const prisma = new PrismaClient();
 
 async function main() {
   const USER_ID = cuid();
+  const ORG_ID = cuid();
+  const hashedPassword = await bcrypt.hash('password', 10);
   const user = await prisma.user.create({
     data: {
       id: USER_ID,
       firstName: 'John',
       lastName: 'Doe',
       email: 'hi@adi.so',
-      password: 'password',
+      password: hashedPassword,
+      orgs: {
+        create: {
+          id: ORG_ID,
+          name: 'Adi',
+          key: 'adi',
+        },
+      },
     },
   });
 
@@ -24,6 +34,7 @@ async function main() {
       key: 'flagsy',
       name: 'Flagsy',
       ownerId: USER_ID,
+      orgId: ORG_ID,
     },
   });
 
@@ -37,6 +48,7 @@ async function main() {
       name: 'Production',
       projectId: PROJECT_ID,
       ownerId: USER_ID,
+      orgId: ORG_ID,
     },
   });
   console.log('Environment created', { environment });
