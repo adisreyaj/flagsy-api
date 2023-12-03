@@ -55,7 +55,7 @@ const setupEnvConfig = async (): Promise<void> => {
 const setupCors = (): void => {
   app.register(cors, {
     credentials: true,
-    origin: ['http://localhost:4200', 'adi.so'],
+    origin: ['http://localhost:4200', 'https://flagsy.adi.so'],
   } as FastifyCorsOptions);
 };
 
