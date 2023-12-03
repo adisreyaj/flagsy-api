@@ -24,7 +24,7 @@ jobs:
 
       - name: Zip artifacts
         run: |
-          tar -czvf build.tar.gz dist/ prisma/
+          tar -czvf build.tar.gz dist/ prisma/ package.json package-lock.json
 
       - name: Send artifacts to remote
         env:
@@ -47,5 +47,5 @@ jobs:
             tar -xzvf build.tar.gz
             npm run prod
             pm2 stop flagsy
-            pm2 start dist/index.js --name flagsy
+            pm2 start dist/src/index.js --name flagsy
             rm -rf build.tar.gz
