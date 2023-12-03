@@ -24,6 +24,7 @@
     "@fastify/mongodb": "^8.0.0",
     "@fastify/type-provider-json-schema-to-ts": "^2.2.2",
     "@prisma/client": "^5.6.0",
+    "@prisma/extension-accelerate": "^0.6.2",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^2.4.3",
     "fastify": "^4.24.3",

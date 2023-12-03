@@ -1,5 +1,10 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { create, getAll, update } from '../handlers/features.handler';
+import {
+  create,
+  deleteFeature,
+  getAll,
+  update,
+} from '../handlers/features.handler';
 
 export const FEATURE_ROUTES = async (app: FastifyInstance) => {
   const userHasAccessToFeature = async (
@@ -52,5 +57,12 @@ export const FEATURE_ROUTES = async (app: FastifyInstance) => {
     url: '/:featureId',
     preHandler: [app.auth([app.validateToken]), userHasAccessToFeature],
     handler: update(app),
+  });
+
+  app.route({
+    method: 'DELETE',
+    url: '/:featureId',
+    preHandler: [app.auth([app.validateToken]), userHasAccessToFeature],
+    handler: deleteFeature(app),
   });
 };

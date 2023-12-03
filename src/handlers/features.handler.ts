@@ -1,5 +1,9 @@
+import { Prisma } from '@prisma/client';
+import { SortOrder } from '../types/common.type';
 import {
   CreateFeatureRouteInterface,
+  DeleteFeatureRouteInterface,
+  FeatureSortBy,
   GetAllFeaturesRouteInterface,
 } from '../types/feature.type';
 import { Handler } from '../types/handler.type';
@@ -52,18 +56,61 @@ const create: Handler<CreateFeatureRouteInterface> = (app) => {
 
 const update: Handler<CreateFeatureRouteInterface> = (app) => {
   return async (request, reply) => {
-    const { value, valueType: type, description } = request.body;
+    const { valueType: type, description, environmentOverrides } = request.body;
     const { featureId } = request.params as { featureId: string };
 
+    // Only one per request for now
+    const environmentOverride = environmentOverrides?.[0];
+
     try {
-      const feature = await app.prisma.feature.update({
+      await app.prisma.feature.findUniqueOrThrow({
         where: {
           id: featureId,
         },
+        select: {
+          type: true,
+          value: true,
+        },
+      });
+
+      const feature = await app.prisma.feature.update({
+        where: {
+          id: featureId,
+          ownerId: request.user.userId,
+        },
         data: {
-          description,
-          type,
-          value,
+          ...(description !== undefined ? { description } : {}),
+          ...(type !== undefined ? { type } : {}),
+          ...(environmentOverride !== undefined
+            ? {
+                environmentOverrides: {
+                  upsert: {
+                    where: {
+                      environmentId_featureId: {
+                        environmentId: environmentOverride.environmentId,
+                        featureId: featureId,
+                      },
+                    },
+                    update: {
+                      environment: {
+                        connect: {
+                          id: environmentOverride.environmentId,
+                        },
+                      },
+                      value: environmentOverride.value as Prisma.InputJsonValue,
+                    },
+                    create: {
+                      environment: {
+                        connect: {
+                          id: environmentOverride.environmentId,
+                        },
+                      },
+                      value: environmentOverride.value as Prisma.InputJsonValue,
+                    },
+                  },
+                },
+              }
+            : {}),
         },
         select: {
           id: true,
@@ -85,11 +132,23 @@ const update: Handler<CreateFeatureRouteInterface> = (app) => {
 
 const getAll: Handler<GetAllFeaturesRouteInterface> = (app) => {
   return async (request, reply) => {
-    const { environmentId, projectId } = request.query;
+    const { environmentId, projectId, sortBy, sortOrder, search } =
+      request.query;
+
+    const sort = sortBy ?? FeatureSortBy.Key;
+    const order = sortOrder ?? SortOrder.Asc;
+
     const features = await app.prisma.feature.findMany({
       where: {
         projectId,
         ownerId: request.user.userId,
+        ...(search !== undefined && search?.trim() !== ''
+          ? {
+              key: {
+                startsWith: search,
+              },
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -126,6 +185,9 @@ const getAll: Handler<GetAllFeaturesRouteInterface> = (app) => {
           },
         },
       },
+      orderBy: {
+        [sort]: order,
+      },
     });
 
     const featuresWithEnvironmentSpecificInfo = features.map((feature) => {
@@ -138,7 +200,7 @@ const getAll: Handler<GetAllFeaturesRouteInterface> = (app) => {
         description: feature.description,
         value:
           environmentId && hasEnvOverride
-            ? feature.environmentOverrides?.[0].value
+            ? feature.environmentOverrides[0].value
             : feature.value,
       };
     });
@@ -147,4 +209,27 @@ const getAll: Handler<GetAllFeaturesRouteInterface> = (app) => {
   };
 };
 
-export { create, getAll, update };
+const deleteFeature: Handler<DeleteFeatureRouteInterface> = (app) => {
+  return async (request, reply) => {
+    const { featureId } = request.params;
+
+    try {
+      await app.prisma.feature.delete({
+        where: {
+          id: featureId,
+          ownerId: request.user.userId,
+          orgId: request.user.orgId,
+        },
+      });
+
+      reply.status(204).send();
+    } catch (e) {
+      app.log.error(e);
+      reply.status(500).send({
+        message: 'Failed to delete feature!',
+      });
+    }
+  };
+};
+
+export { create, getAll, update, deleteFeature };
