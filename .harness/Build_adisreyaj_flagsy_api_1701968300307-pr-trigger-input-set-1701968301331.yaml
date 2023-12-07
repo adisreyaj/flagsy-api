@@ -1,0 +1,14 @@
+inputSet:
+  name: Build_adisreyaj_flagsy_api_1701968300307-pr-trigger-input-set
+  identifier: Build_adisreyaj_flagsy_api_1701968300307prtriggerinputset
+  orgIdentifier: default
+  projectIdentifier: default_project
+  pipeline:
+    identifier: Build_adisreyaj_flagsy_api_1701968300307
+    properties:
+      ci:
+        codebase:
+          build:
+            type: PR
+            spec:
+              number: <+trigger.prNumber>
