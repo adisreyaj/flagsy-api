@@ -1,32 +1,34 @@
 import { FastifyInstance } from 'fastify';
-import { login, logout, me, register } from '../handlers/auth.handler';
+import { AuthHandler } from '../handlers/auth.handler';
 import { UserSchema } from '../schema/user.schema';
 
 export const AUTH_ROUTES = async (app: FastifyInstance) => {
+  const handler = new AuthHandler(app);
+
   app.route({
     method: 'POST',
     url: '/register',
     schema: UserSchema.createUser,
-    handler: register(app),
+    handler: handler.register,
   });
 
   app.route({
     method: 'POST',
     url: '/login',
-    handler: login(app),
+    handler: handler.login,
   });
 
   app.route({
     method: 'GET',
     url: '/me',
     preHandler: app.auth([app.validateToken]),
-    handler: me(app),
+    handler: handler.me,
   });
 
   app.route({
     method: 'GET',
     url: '/logout',
     preHandler: app.auth([app.validateToken]),
-    handler: logout(app),
+    handler: handler.logout,
   });
 };

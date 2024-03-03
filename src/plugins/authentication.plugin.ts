@@ -7,7 +7,7 @@ declare module '@fastify/jwt' {
   }
 }
 
-const authenticateUsingCookiePlugin: FastifyPluginAsync = fp(async (server) => {
+const validateTokenPlugin: FastifyPluginAsync = fp(async (server) => {
   const authenticate = async (request: FastifyRequest, reply: FastifyReply) => {
     const token = request.cookies?.token;
     if (!token) {
@@ -30,4 +30,4 @@ const authenticateUsingCookiePlugin: FastifyPluginAsync = fp(async (server) => {
   server.decorate('validateToken', authenticate);
 });
 
-export default authenticateUsingCookiePlugin;
+export { validateTokenPlugin };

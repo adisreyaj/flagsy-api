@@ -1,68 +1,50 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import {
-  create,
-  deleteFeature,
-  getAll,
-  update,
-} from '../handlers/features.handler';
+import { FastifyInstance } from 'fastify';
+import { FeaturesHandler } from '../handlers/features.handler';
+import { FeaturesSchema } from '../schema/features.schema';
+import { AuthUtil } from '../util/auth.util';
 
 export const FEATURE_ROUTES = async (app: FastifyInstance) => {
-  const userHasAccessToFeature = async (
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ) => {
-    const { featureId } = request.params as { featureId: string };
-
-    const feature = await app.prisma.feature.findUnique({
-      where: {
-        id: featureId,
-        ownerId: request.user.userId,
-        orgId: request.user.orgId,
-      },
-      select: {
-        id: true,
-        orgId: true,
-        ownerId: true,
-      },
-    });
-
-    if (!feature) {
-      return reply.status(404).send(new Error('Feature not found'));
-    }
-    if (
-      feature?.orgId !== request.user.orgId ||
-      feature?.ownerId !== request.user.userId
-    ) {
-      return reply.status(401).send(new Error('Unauthorized'));
-    }
-  };
+  const handler = new FeaturesHandler(app);
 
   app.route({
     method: 'GET',
     url: '/',
+    schema: FeaturesSchema.getAllFeatures,
     preHandler: app.auth([app.validateToken]),
-    handler: getAll(app),
+    handler: handler.getAll,
+  });
+
+  app.route({
+    method: 'GET',
+    url: '/:featureId/changelog',
+    preHandler: app.auth([app.validateToken]),
+    handler: handler.getFeatureChangelog,
   });
 
   app.route({
     method: 'POST',
     url: '/',
-    preHandler: app.auth([app.validateToken]),
-
-    handler: create(app),
+    preHandler: [app.auth([app.validateToken])],
+    handler: handler.create,
   });
 
   app.route({
     method: 'POST',
     url: '/:featureId',
-    preHandler: [app.auth([app.validateToken]), userHasAccessToFeature],
-    handler: update(app),
+    preHandler: [
+      app.auth([app.validateToken]),
+      AuthUtil.userHasAccessToFeature(app),
+    ],
+    handler: handler.update,
   });
 
   app.route({
     method: 'DELETE',
     url: '/:featureId',
-    preHandler: [app.auth([app.validateToken]), userHasAccessToFeature],
-    handler: deleteFeature(app),
+    preHandler: [
+      app.auth([app.validateToken]),
+      AuthUtil.userHasAccessToFeature(app),
+    ],
+    handler: handler.deleteFeature,
   });
 };

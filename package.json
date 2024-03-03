@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node index.js",
+    "dev": "nodemon src/index.ts",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:prod": "prisma migrate deploy",
     "primsa:generate": "prisma generate",
@@ -26,12 +27,13 @@
     "@fastify/jwt": "^7.2.3",
     "@fastify/mongodb": "^8.0.0",
     "@fastify/type-provider-json-schema-to-ts": "^2.2.2",
-    "@prisma/client": "^5.6.0",
+    "@prisma/client": "^5.7.0",
     "@prisma/extension-accelerate": "^0.6.2",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^2.4.3",
     "fastify": "^4.24.3",
     "fastify-type-provider-zod": "^1.1.9",
+    "just-diff": "^6.0.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -48,7 +50,7 @@
     "nodemon": "^3.0.1",
     "pino-pretty": "^10.2.3",
     "prettier": "^3.1.0",
-    "prisma": "^5.6.0",
+    "prisma": "^5.7.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   },

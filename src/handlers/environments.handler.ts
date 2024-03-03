@@ -1,13 +1,21 @@
+import { FastifyInstance } from 'fastify';
 import {
   CreateEnvironmentRouteInterface,
   GetAllEnvironmentRouteInterface,
 } from '../types/environments.type';
 import { Handler } from '../types/handler.type';
 
-const create: Handler<CreateEnvironmentRouteInterface> = (app) => {
-  return async (request, reply) => {
+export class EnvironmentsHandler {
+  public constructor(private app: FastifyInstance) {
+    this.app = app;
+  }
+
+  public create: Handler<CreateEnvironmentRouteInterface> = async (
+    request,
+    reply,
+  ) => {
     const { name, projectId, key } = request.body;
-    const environment = await app.prisma.environment.create({
+    const environment = await this.app.prisma.environment.create({
       data: {
         name,
         key,
@@ -21,13 +29,13 @@ const create: Handler<CreateEnvironmentRouteInterface> = (app) => {
     });
     reply.send(environment);
   };
-};
-
-const getAll: Handler<GetAllEnvironmentRouteInterface> = (app) => {
-  return async (request, reply) => {
+  public getAll: Handler<GetAllEnvironmentRouteInterface> = async (
+    request,
+    reply,
+  ) => {
     const { projectId } = request.query;
 
-    const environments = await app.prisma.environment.findMany({
+    const environments = await this.app.prisma.environment.findMany({
       where: {
         ownerId: request.user.userId,
         projectId,
@@ -53,6 +61,4 @@ const getAll: Handler<GetAllEnvironmentRouteInterface> = (app) => {
     });
     reply.send(environments);
   };
-};
-
-export { getAll, create };
+}

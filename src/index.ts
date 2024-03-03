@@ -1,11 +1,9 @@
-import { initApp, startApp } from './app';
-import { registerRoutes } from './routes/routes';
+import { App } from './app';
 
 const start = async () => {
   try {
-    const app = await initApp();
-    registerRoutes(app);
-    await startApp(app);
+    const app = new App();
+    await app.start();
   } catch (err) {
     console.log(err);
     process.exit();

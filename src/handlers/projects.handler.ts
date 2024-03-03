@@ -1,10 +1,15 @@
 import { Prisma } from '@prisma/client';
+import { FastifyInstance } from 'fastify';
 import { Handler } from '../types/handler.type';
 
-const create: Handler = (app) => {
-  return async (request, reply) => {
+export class ProjectsHandler {
+  public constructor(private app: FastifyInstance) {
+    this.app = app;
+  }
+
+  public create: Handler = async (request, reply) => {
     const { name, key } = request.body as Prisma.ProjectUncheckedCreateInput;
-    const project = await app.prisma.project.create({
+    const project = await this.app.prisma.project.create({
       data: {
         name,
         key,
@@ -17,11 +22,9 @@ const create: Handler = (app) => {
     });
     reply.send(project);
   };
-};
 
-const getAll: Handler = (app) => {
-  return async (request, reply) => {
-    const projects = await app.prisma.project.findMany({
+  public getAll: Handler = async (request, reply) => {
+    const projects = await this.app.prisma.project.findMany({
       where: {
         ownerId: request.user.userId,
       },
@@ -40,6 +43,4 @@ const getAll: Handler = (app) => {
     });
     reply.send(projects);
   };
-};
-
-export { create, getAll };
+}
