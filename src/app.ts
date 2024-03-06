@@ -18,6 +18,7 @@ import { validateTokenPlugin } from './plugins/authentication.plugin';
 import prisma from './plugins/prisma.plugin';
 import { ACCESS_KEY_ROUTES } from './routes/access-key.route';
 import { AUTH_ROUTES } from './routes/auth.routes';
+import { CHANGELOG_ROUTES } from './routes/changelog.routes';
 import { ENVIRONMENT_ROUTES } from './routes/environments.routes';
 import { FEATURE_ROUTES } from './routes/feature.routes';
 import { PROJECT_ROUTES } from './routes/projects.routes';
@@ -79,6 +80,7 @@ export class App {
     this.app.register(PROJECT_ROUTES, { prefix: '/projects' });
     this.app.register(FEATURE_ROUTES, { prefix: '/features' });
     this.app.register(ACCESS_KEY_ROUTES, { prefix: '/access-key' });
+    this.app.register(CHANGELOG_ROUTES, { prefix: '/changelog' });
 
     this.app.register(PUBLIC_ROUTES, { prefix: '/public' });
   }

@@ -173,11 +173,13 @@ export class FeaturesHandler {
         },
       });
     } catch (e) {
+      this.app.log.error(e);
       reply.status(500).send({
         message: 'Failed to update feature!',
       });
     }
   };
+
   public getAll: Handler<GetAllFeaturesRouteInterface> = async (
     request,
     reply,
