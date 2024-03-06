@@ -2,17 +2,15 @@ import { Prisma } from '@prisma/client';
 
 export abstract class FeatureChangelogUtil {
   static buildChangeData = (
-    data: CreateChangeLogData,
+    oldValue: FeatureChangeDataValueType,
+    newValue: FeatureChangeDataValueType,
   ): Prisma.InputJsonValue => {
     return {
-      type: FeatureChangeType.ValueChange,
       old: {
-        value: data.featureOld.value,
-        type: data.featureOld.type,
+        value: oldValue,
       },
       new: {
-        value: data.featureNew.value,
-        type: data.featureNew.type,
+        value: newValue,
       },
     };
   };
@@ -20,14 +18,13 @@ export abstract class FeatureChangelogUtil {
 
 export enum FeatureChangeType {
   ValueChange = 'VALUE_CHANGE',
+  Create = 'CREATE',
+  Delete = 'DELETE',
 }
 
-export interface FeatureChangeData {
-  type: string;
-  value: string | number | boolean | Prisma.InputJsonValue | null;
-}
-
-export interface CreateChangeLogData {
-  featureOld: FeatureChangeData;
-  featureNew: FeatureChangeData;
-}
+export type FeatureChangeDataValueType =
+  | string
+  | number
+  | boolean
+  | Prisma.InputJsonValue
+  | null;

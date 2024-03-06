@@ -1,19 +1,19 @@
 import { FastifyInstance } from 'fastify';
-import { create, getAll } from '../handlers/projects.handler';
+import { ProjectsHandler } from '../handlers/projects.handler';
 
 export const PROJECT_ROUTES = async (app: FastifyInstance) => {
+  const handler = new ProjectsHandler(app);
   app.route({
     method: 'GET',
     url: '/',
     preHandler: app.auth([app.validateToken]),
-
-    handler: getAll(app),
+    handler: handler.getAll,
   });
 
   app.route({
     method: 'POST',
     url: '/',
     preHandler: app.auth([app.validateToken]),
-    handler: create(app),
+    handler: handler.create,
   });
 };

@@ -1,8 +1,13 @@
+import { FastifyInstance } from 'fastify';
 import { Handler } from '../types/handler.type';
 
-const getAll: Handler = (app) => {
-  return async (_request, reply) => {
-    const users = await app.prisma.user.findMany({
+export class UsersHandler {
+  public constructor(private app: FastifyInstance) {
+    this.app = app;
+  }
+
+  public getAll: Handler = async (_request, reply) => {
+    const users = await this.app.prisma.user.findMany({
       select: {
         id: true,
         email: true,
@@ -12,6 +17,4 @@ const getAll: Handler = (app) => {
     });
     reply.send(users);
   };
-};
-
-export { getAll };
+}

@@ -6,14 +6,21 @@ import { CreateUserRouteInterface } from '../types/user.type';
 
 import { AuthUtil } from '../util/auth.util';
 
-const register: Handler<CreateUserRouteInterface> = (app: FastifyInstance) => {
-  return async (request, reply) => {
+export class AuthHandler {
+  public constructor(private app: FastifyInstance) {
+    this.app = app;
+  }
+
+  public register: Handler<CreateUserRouteInterface> = async (
+    request,
+    reply,
+  ) => {
     const { email, password, firstName, lastName, orgName } = request.body;
 
     const salt = await genSalt(10);
     const hashedPassword = await hash(password, salt);
 
-    const user = await app.prisma.user.create({
+    const user = await this.app.prisma.user.create({
       data: {
         email,
         password: hashedPassword,
@@ -41,36 +48,14 @@ const register: Handler<CreateUserRouteInterface> = (app: FastifyInstance) => {
     AuthUtil.setCookie(reply, jwt);
     reply.send(user);
   };
-};
 
-const me: Handler = (app: FastifyInstance) => {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = await app.prisma.user.findUnique({
-      where: {
-        id: request.user.userId,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-      },
-    });
-
-    if (!user) {
-      reply.send();
-      return;
-    }
-
-    reply.send(user);
-  };
-};
-
-const login: Handler = (app: FastifyInstance) => {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
+  public login: Handler = async (
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ) => {
     const { email, password } = request.body as Prisma.UserCreateInput;
 
-    const user = await app.prisma.user.findUnique({
+    const user = await this.app.prisma.user.findUnique({
       where: {
         email,
       },
@@ -110,14 +95,34 @@ const login: Handler = (app: FastifyInstance) => {
       email: user.email,
     });
   };
-};
 
-const logout: Handler = () => {
-  return async (_request: FastifyRequest, reply: FastifyReply) => {
+  public logout: Handler = async (
+    _request: FastifyRequest,
+    reply: FastifyReply,
+  ) => {
     reply.clearCookie('token').send({
       message: 'Logged out successfully',
     });
   };
-};
 
-export { register, login, logout, me };
+  public me: Handler = async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = await this.app.prisma.user.findUnique({
+      where: {
+        id: request.user.userId,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      reply.send();
+      return;
+    }
+
+    reply.send(user);
+  };
+}

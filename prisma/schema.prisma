@@ -22,6 +22,7 @@ model User {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   featureChangeLogs FeatureChangeLog[]
+  accessKeys        AccessKey[]
 }
 
 model Org {
@@ -33,8 +34,9 @@ model Org {
   environments Environment[]
   features     Feature[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  accessKeys AccessKey[]
 }
 
 model Project {
@@ -52,8 +54,10 @@ model Project {
   owner   User   @relation(fields: [ownerId], references: [id])
   ownerId String
 
-  environments Environment[]
-  features     Feature[]
+  environments      Environment[]
+  features          Feature[]
+  accessKeys        AccessKey[]
+  featureChangeLogs FeatureChangeLog[]
 
   @@unique([key, orgId])
 }
@@ -76,6 +80,7 @@ model Environment {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   featureChangeLogs FeatureChangeLog[]
+  accessKeys        AccessKey[]
 
   @@unique([key, projectId, orgId])
 }
@@ -85,6 +90,7 @@ model Feature {
   key                  String
   type                 FeatureValueType
   value                Json
+  active               Boolean                    @default(true)
   description          String?
   environmentOverrides FeatureEnvironmentConfig[]
 
@@ -120,16 +126,40 @@ model FeatureEnvironmentConfig {
 }
 
 model FeatureChangeLog {
-  id            String       @id @default(cuid())
-  feature       Feature?     @relation(fields: [featureId], references: [id], onDelete: SetNull)
+  id            String               @id @default(cuid())
+  type          FeatureChangeLogType
+  feature       Feature?             @relation(fields: [featureId], references: [id], onDelete: SetNull)
   featureId     String?
-  environment   Environment? @relation(fields: [environmentId], references: [id], onDelete: SetNull)
+  environment   Environment?         @relation(fields: [environmentId], references: [id], onDelete: SetNull)
   environmentId String?
+  project       Project?             @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId     String?
   change        Json
-  owner         User         @relation(fields: [ownerId], references: [id])
+  owner         User                 @relation(fields: [ownerId], references: [id])
   ownerId       String
 
   createdAt DateTime @default(now())
+}
+
+model AccessKey {
+  id   String        @id @default(cuid())
+  key  String
+  type AccessKeyType
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  org   Org    @relation(fields: [orgId], references: [id])
+  orgId String
+
+  environment   Environment @relation(fields: [environmentId], references: [id])
+  environmentId String
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum FeatureValueType {
@@ -142,4 +172,15 @@ enum FeatureValueType {
 enum Role {
   ADMIN
   USER
+}
+
+enum AccessKeyType {
+  READ
+  WRITE
+}
+
+enum FeatureChangeLogType {
+  VALUE_CHANGE
+  CREATE
+  DELETE
 }
