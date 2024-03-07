@@ -4,7 +4,7 @@ import z from 'zod';
 export abstract class FeaturesSchema {
   static getAllFeaturesCommonQueryString = z.object({
     sortBy: z.string().optional(),
-    sortOrder: z.string().optional(),
+    direction: z.string().optional(),
     search: z.string().optional(),
   });
   public static getAllFeatures: FastifySchema = {
@@ -44,6 +44,12 @@ export abstract class FeaturesSchema {
           key: z.string(),
           createdAt: z.date(),
           updatedAt: z.date(),
+          createdBy: z.object({
+            id: z.string(),
+            email: z.string(),
+            firstName: z.string(),
+            lastName: z.string(),
+          }),
         }),
       ),
     },
