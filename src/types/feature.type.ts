@@ -29,7 +29,7 @@ export interface GetAllFeaturesRouteInterface extends RouteGenericInterface {
   Querystring: EnvironmentIdQueryParam &
     ProjectIdQueryParam & {
       sortBy?: FeatureSortBy;
-      sortOrder?: SortOrder;
+      direction?: SortOrder;
       search?: string;
     };
 }

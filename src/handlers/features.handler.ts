@@ -157,7 +157,7 @@ export class FeaturesHandler {
         const prevValueOfFeature =
           savedFeature.environmentOverrides?.[0].value ?? savedFeature.value;
 
-        this.#changeLogService.logUpdateFeature({
+        await this.#changeLogService.logUpdateFeature({
           environmentId: environmentId,
           featureId: savedFeature.id,
           changeData: FeatureChangelogUtil.buildChangeData(
@@ -190,12 +190,12 @@ export class FeaturesHandler {
       environmentKey,
       projectKey,
       sortBy,
-      sortOrder,
+      direction,
       search,
     } = request.query;
 
     const sort = sortBy ?? FeatureSortBy.Key;
-    const order = sortOrder ?? SortOrder.Asc;
+    const order = direction ?? SortOrder.Asc;
 
     const featuresWithEnvironmentSpecificInfo = await this.getFeatures({
       where: {
@@ -225,7 +225,6 @@ export class FeaturesHandler {
       sort: sort,
       order: order,
     });
-
     reply.send(featuresWithEnvironmentSpecificInfo);
   };
 
@@ -302,6 +301,9 @@ export class FeaturesHandler {
     sort = FeatureSortBy.Key,
     order = SortOrder.Asc,
   }: GetFeaturesArgs) {
+    console.log({
+      [sort]: order,
+    });
     const features = await this.app.prisma.feature.findMany({
       where: where,
       select: {
@@ -371,6 +373,7 @@ export class FeaturesHandler {
         description: feature.description,
         createdAt: feature.createdAt,
         updatedAt: feature.updatedAt,
+        createdBy: feature.owner,
         value:
           hasEnvironmentFilterApplied && hasEnvOverride
             ? feature.environmentOverrides[0].value
