@@ -45,6 +45,7 @@ jobs:
           script: |
             cd /home/$REMOTE_SERVER_USER/flagsy
             tar -xzvf build.tar.gz
+            npm run prisma:generate
             npm run prod
             pm2 stop flagsy
             pm2 start dist/src/index.js --name flagsy

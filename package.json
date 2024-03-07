@@ -9,7 +9,7 @@
     "dev": "nodemon src/index.ts",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:prod": "prisma migrate deploy",
-    "primsa:generate": "prisma generate",
+    "prisma:generate": "prisma generate",
     "prod": "npm i && npm run prisma:migrate:prod && npm run primsa:generate"
   },
   "keywords": [],
