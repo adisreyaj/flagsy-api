@@ -10,7 +10,7 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:generate": "prisma generate",
-    "prod": "npm i && npm run prisma:migrate:prod && npm run primsa:generate"
+    "prod": "npm i && npm run prisma:migrate:prod && npm run prisma:generate"
   },
   "keywords": [],
   "author": {
