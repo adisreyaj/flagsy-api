@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { FastifyInstance } from 'fastify';
+import { FeatureChangeLogType } from '.prisma/client';
 
 export class FeatureChangelogService {
   public constructor(private app: FastifyInstance) {
@@ -52,6 +53,7 @@ export class FeatureChangelogService {
         environmentId: data.environmentId,
         ownerId: data.ownerId,
         change: data.changeData,
+        type: FeatureChangeLogType.VALUE_CHANGE,
       },
     });
   }
