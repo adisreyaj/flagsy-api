@@ -14,6 +14,7 @@ import {
 import { Handler } from '../types/handler.type';
 import { FastifyRequestWithAccessKey } from '../types/public-api.type';
 import { FeatureChangelogUtil } from '../util/feature-changelog.util';
+import { FeatureChangeLogType } from '.prisma/client';
 
 export class FeaturesHandler {
   #changeLogService: FeatureChangelogService;
@@ -35,30 +36,38 @@ export class FeaturesHandler {
     } = request.body;
 
     try {
-      const feature = await this.app.prisma.feature.create({
-        data: {
-          projectId,
-          key,
-          type,
-          value,
-          ownerId: request.user.userId,
-          orgId: request.user.orgId,
-          description,
-          environmentOverrides: {
-            createMany: {
-              data: (environmentOverrides ?? []).map((override) => {
-                return {
-                  environmentId: override.environmentId,
-                  value: override.value as Prisma.InputJsonValue,
-                };
-              }),
-              skipDuplicates: true,
+      const feature = await this.app.prisma.$transaction(async () => {
+        const feature = await this.app.prisma.feature.create({
+          data: {
+            projectId,
+            key,
+            type,
+            value,
+            ownerId: request.user.userId,
+            orgId: request.user.orgId,
+            description,
+            environmentOverrides: {
+              createMany: {
+                data: (environmentOverrides ?? []).map((override) => {
+                  return {
+                    environmentId: override.environmentId,
+                    value: override.value as Prisma.InputJsonValue,
+                  };
+                }),
+                skipDuplicates: true,
+              },
             },
           },
-        },
-        select: {
-          id: true,
-        },
+          select: {
+            id: true,
+          },
+        });
+
+        await this.#changeLogService.logCreateFeature({
+          featureId: feature.id,
+          ownerId: request.user.userId,
+        });
+        return feature;
       });
 
       reply.status(201).send({
@@ -67,6 +76,7 @@ export class FeaturesHandler {
         },
       });
     } catch (e) {
+      this.app.log.error(e);
       reply.status(500).send({
         message: 'Failed to create feature!',
       });
@@ -77,7 +87,7 @@ export class FeaturesHandler {
     request,
     reply,
   ) => {
-    const { valueType: type, value, description, environmentId } = request.body;
+    const { value, description, environmentId } = request.body;
     const { featureId } = request.params as { featureId: string };
 
     try {
@@ -114,7 +124,6 @@ export class FeaturesHandler {
         data: {
           key: savedFeature.key, // To make sure `updatedAt` is updated
           ...(description !== undefined ? { description } : {}),
-          ...(type !== undefined ? { type } : {}),
           ...(environmentId !== undefined
             ? {
                 environmentOverrides: {
@@ -155,7 +164,7 @@ export class FeaturesHandler {
 
       if (environmentId !== undefined) {
         const prevValueOfFeature =
-          savedFeature.environmentOverrides?.[0].value ?? savedFeature.value;
+          savedFeature.environmentOverrides?.[0]?.value ?? savedFeature.value;
 
         await this.#changeLogService.logUpdateFeature({
           environmentId: environmentId,
@@ -192,12 +201,14 @@ export class FeaturesHandler {
       sortBy,
       direction,
       search,
+      offset,
+      limit,
     } = request.query;
 
     const sort = sortBy ?? FeatureSortBy.Key;
     const order = direction ?? SortOrder.Asc;
 
-    const featuresWithEnvironmentSpecificInfo = await this.getFeatures({
+    const resultWithTotal = await this.getFeatures({
       where: {
         project: {
           ...(projectId !== undefined
@@ -219,13 +230,16 @@ export class FeaturesHandler {
               },
             }
           : {}),
+        deleted: false,
       },
-      environmentId: environmentId,
-      environmentKey: environmentKey,
-      sort: sort,
-      order: order,
+      environmentId,
+      environmentKey,
+      sort,
+      order,
+      offset,
+      limit,
     });
-    reply.send(featuresWithEnvironmentSpecificInfo);
+    reply.send(resultWithTotal);
   };
 
   public getFeatureChangelog: Handler<GetFeatureChangeLogRouteInterface> =
@@ -251,13 +265,23 @@ export class FeaturesHandler {
     const { featureId } = request.params;
 
     try {
-      await this.app.prisma.feature.delete({
-        where: {
-          id: featureId,
-          ownerId: request.user.userId,
-          orgId: request.user.orgId,
-        },
-      });
+      await this.app.prisma.$transaction([
+        this.app.prisma.feature.update({
+          where: {
+            id: featureId,
+          },
+          data: {
+            deleted: true,
+          },
+        }),
+        this.app.prisma.featureChangeLog.create({
+          data: {
+            featureId: featureId,
+            ownerId: request.user.userId,
+            type: FeatureChangeLogType.DELETE,
+          },
+        }),
+      ]);
 
       reply.status(204).send();
     } catch (e) {
@@ -300,86 +324,95 @@ export class FeaturesHandler {
     environmentKey,
     sort = FeatureSortBy.Key,
     order = SortOrder.Asc,
+    offset = 0,
+    limit = 1000,
   }: GetFeaturesArgs) {
-    console.log({
-      [sort]: order,
-    });
-    const features = await this.app.prisma.feature.findMany({
-      where: where,
-      select: {
-        id: true,
-        key: true,
-        type: true,
-        value: true,
-        description: true,
-        project: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        environmentOverrides: {
-          where: {
-            environment: {
-              ...(environmentId !== undefined
-                ? {
-                    id: environmentId,
-                  }
-                : {}),
-              ...(environmentKey !== undefined
-                ? {
-                    key: environmentKey,
-                  }
-                : {}),
+    const [features, total] = await this.app.prisma.$transaction([
+      this.app.prisma.feature.findMany({
+        where: where,
+        select: {
+          id: true,
+          key: true,
+          type: true,
+          value: true,
+          description: true,
+          project: {
+            select: {
+              id: true,
+              name: true,
             },
           },
-          select: {
-            environment: {
-              select: {
-                id: true,
-                name: true,
-                key: true,
+          environmentOverrides: {
+            where: {
+              environment: {
+                ...(environmentId !== undefined
+                  ? {
+                      id: environmentId,
+                    }
+                  : {}),
+                ...(environmentKey !== undefined
+                  ? {
+                      key: environmentKey,
+                    }
+                  : {}),
               },
             },
-            value: true,
+            select: {
+              environment: {
+                select: {
+                  id: true,
+                  name: true,
+                  key: true,
+                },
+              },
+              value: true,
+            },
           },
-        },
-        owner: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
+          owner: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
           },
+          updatedAt: true,
+          createdAt: true,
         },
-        updatedAt: true,
-        createdAt: true,
-      },
-      orderBy: {
-        [sort]: order,
-      },
-    });
+        orderBy: {
+          [sort]: order,
+        },
+        skip: offset,
+        take: limit,
+      }),
+      this.app.prisma.feature.count({
+        where: where,
+      }),
+    ]);
 
     const hasEnvironmentFilterApplied =
       environmentId !== undefined || environmentKey !== undefined;
 
-    return features.map((feature) => {
-      const hasEnvOverride = feature.environmentOverrides.length > 0;
-      return {
-        id: feature.id,
-        key: feature.key,
-        type: feature.type,
-        project: feature.project,
-        description: feature.description,
-        createdAt: feature.createdAt,
-        updatedAt: feature.updatedAt,
-        createdBy: feature.owner,
-        value:
-          hasEnvironmentFilterApplied && hasEnvOverride
-            ? feature.environmentOverrides[0].value
-            : feature.value,
-      };
-    });
+    return {
+      total,
+      data: features.map((feature) => {
+        const hasEnvOverride = feature.environmentOverrides.length > 0;
+        return {
+          id: feature.id,
+          key: feature.key,
+          type: feature.type,
+          project: feature.project,
+          description: feature.description,
+          createdAt: feature.createdAt,
+          updatedAt: feature.updatedAt,
+          createdBy: feature.owner,
+          value:
+            hasEnvironmentFilterApplied && hasEnvOverride
+              ? feature.environmentOverrides[0].value
+              : feature.value,
+        };
+      }),
+    };
   }
 }
 
@@ -389,4 +422,6 @@ type GetFeaturesArgs = {
   environmentKey?: string;
   sort?: FeatureSortBy;
   order?: SortOrder;
+  offset?: number;
+  limit?: number;
 };

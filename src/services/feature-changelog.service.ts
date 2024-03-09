@@ -46,13 +46,35 @@ export class FeatureChangelogService {
     });
   }
 
+  public async logCreateFeature(data: UpdateFeatureLogArgs) {
+    return this.app.prisma.featureChangeLog.create({
+      data: {
+        featureId: data.featureId,
+        ownerId: data.ownerId,
+        change: data.changeData ?? Prisma.JsonNull,
+        type: FeatureChangeLogType.CREATE,
+      },
+    });
+  }
+
+  public async logDeleteFeature(data: UpdateFeatureLogArgs) {
+    return this.app.prisma.featureChangeLog.create({
+      data: {
+        featureId: data.featureId,
+        ownerId: data.ownerId,
+        change: data.changeData ?? Prisma.JsonNull,
+        type: FeatureChangeLogType.DELETE,
+      },
+    });
+  }
+
   public async logUpdateFeature(data: UpdateFeatureLogArgs) {
     return this.app.prisma.featureChangeLog.create({
       data: {
         featureId: data.featureId,
         environmentId: data.environmentId,
         ownerId: data.ownerId,
-        change: data.changeData,
+        change: data.changeData ?? Prisma.JsonNull,
         type: FeatureChangeLogType.VALUE_CHANGE,
       },
     });
@@ -60,8 +82,8 @@ export class FeatureChangelogService {
 }
 
 export interface UpdateFeatureLogArgs {
-  environmentId: string;
+  environmentId?: string;
   featureId: string;
   ownerId: string;
-  changeData: Prisma.InputJsonValue;
+  changeData?: Prisma.InputJsonValue;
 }

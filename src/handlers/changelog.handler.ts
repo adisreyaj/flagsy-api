@@ -33,35 +33,42 @@ export class ChangelogHandler {
           return {};
       }
     };
-    const changeLogs = await this.app.prisma.featureChangeLog.findMany({
-      select: {
-        feature: {
-          select: {
-            id: true,
-            key: true,
+    const [changeLogs, total] = await this.app.prisma.$transaction([
+      this.app.prisma.featureChangeLog.findMany({
+        select: {
+          feature: {
+            select: {
+              id: true,
+              key: true,
+            },
           },
-        },
-        environment: {
-          select: {
-            id: true,
-            key: true,
-            name: true,
+          environment: {
+            select: {
+              id: true,
+              key: true,
+              name: true,
+            },
           },
-        },
-        owner: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
+          owner: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
           },
+          change: true,
+          createdAt: true,
+          type: true,
         },
-        change: true,
-        createdAt: true,
-      },
-      orderBy: getOrderBy(sortBy, direction),
-    });
+        orderBy: getOrderBy(sortBy, direction),
+      }),
+      this.app.prisma.featureChangeLog.count({}),
+    ]);
 
-    reply.send(changeLogs);
+    reply.send({
+      data: changeLogs,
+      total,
+    });
   };
 }

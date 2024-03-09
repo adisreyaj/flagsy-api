@@ -34,6 +34,7 @@
     "fastify": "^4.24.3",
     "fastify-type-provider-zod": "^1.1.9",
     "just-diff": "^6.0.2",
+    "query-string-esm": "^6.13.6",
     "zod": "^3.22.4"
   },
   "devDependencies": {

@@ -2,16 +2,20 @@ import { Prisma } from '@prisma/client';
 
 export abstract class FeatureChangelogUtil {
   static buildChangeData = (
-    oldValue: FeatureChangeDataValueType,
-    newValue: FeatureChangeDataValueType,
+    oldValue?: FeatureChangeDataValueType,
+    newValue?: FeatureChangeDataValueType,
   ): Prisma.InputJsonValue => {
     return {
-      old: {
-        value: oldValue,
-      },
-      new: {
-        value: newValue,
-      },
+      old: oldValue
+        ? {
+            value: oldValue,
+          }
+        : undefined,
+      new: newValue
+        ? {
+            value: newValue,
+          }
+        : undefined,
     };
   };
 }

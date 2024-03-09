@@ -6,52 +6,40 @@ export abstract class FeaturesSchema {
     sortBy: z.string().optional(),
     direction: z.string().optional(),
     search: z.string().optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional(),
+    projectId: z.string().optional(),
+    environmentId: z.string().optional(),
+    projectKey: z.string().optional(),
+    environmentKey: z.string().optional(),
   });
   public static getAllFeatures: FastifySchema = {
-    querystring: z.union([
-      z.object({
-        ...this.getAllFeaturesCommonQueryString.shape,
-        projectId: z.string(),
-        environmentId: z.string(),
-      }),
-      z.object({
-        ...this.getAllFeaturesCommonQueryString.shape,
-        projectKey: z.string(),
-        environmentKey: z.string(),
-      }),
-      z.object({
-        ...this.getAllFeaturesCommonQueryString.shape,
-        projectId: z.string(),
-        environmentKey: z.string(),
-      }),
-      z.object({
-        ...this.getAllFeaturesCommonQueryString.shape,
-        projectKey: z.string(),
-        environmentId: z.string(),
-      }),
-    ]),
+    querystring: this.getAllFeaturesCommonQueryString,
     response: {
-      200: z.array(
-        z.object({
-          project: z.object({
+      200: z.object({
+        total: z.number(),
+        data: z.array(
+          z.object({
+            project: z.object({
+              id: z.string(),
+              name: z.string(),
+            }),
+            description: z.string(),
             id: z.string(),
-            name: z.string(),
+            type: z.string(),
+            value: z.union([z.string(), z.number(), z.boolean()]),
+            key: z.string(),
+            createdAt: z.date(),
+            updatedAt: z.date(),
+            createdBy: z.object({
+              id: z.string(),
+              email: z.string(),
+              firstName: z.string(),
+              lastName: z.string(),
+            }),
           }),
-          description: z.string(),
-          id: z.string(),
-          type: z.string(),
-          value: z.union([z.string(), z.number(), z.boolean()]),
-          key: z.string(),
-          createdAt: z.date(),
-          updatedAt: z.date(),
-          createdBy: z.object({
-            id: z.string(),
-            email: z.string(),
-            firstName: z.string(),
-            lastName: z.string(),
-          }),
-        }),
-      ),
+        ),
+      }),
     },
   } as const;
 

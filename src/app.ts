@@ -4,13 +4,13 @@ import cors, { type FastifyCorsOptions } from '@fastify/cors';
 import { fastifyEnv } from '@fastify/env';
 import { fastifyJwt } from '@fastify/jwt';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
-
 import Fastify, { FastifyInstance } from 'fastify';
 import {
   serializerCompiler,
   validatorCompiler,
   ZodTypeProvider,
 } from 'fastify-type-provider-zod';
+import queryString from 'query-string-esm';
 import { ZodError } from 'zod';
 import { ENV_SCHEMA } from './config/app.config';
 
@@ -38,6 +38,11 @@ export class App {
             colorize: true,
           },
         },
+      },
+      querystringParser: (str) => {
+        return queryString.parse(str.toLowerCase(), {
+          parseNumbers: true,
+        });
       },
     }).withTypeProvider<JsonSchemaToTsProvider>();
   }

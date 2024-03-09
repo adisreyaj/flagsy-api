@@ -2,8 +2,11 @@ import { FeatureValueType } from '@prisma/client';
 import { RouteGenericInterface } from 'fastify/types/route';
 import {
   EnvironmentIdQueryParam,
+  PaginationQueryParam,
   ProjectIdQueryParam,
+  SearchQueryParam,
   SortOrder,
+  SortOrderQueryParam,
 } from './common.type';
 
 export interface FeatureCreateData {
@@ -27,11 +30,10 @@ export type FeatureUpdateData = Omit<
 
 export interface GetAllFeaturesRouteInterface extends RouteGenericInterface {
   Querystring: EnvironmentIdQueryParam &
-    ProjectIdQueryParam & {
-      sortBy?: FeatureSortBy;
-      direction?: SortOrder;
-      search?: string;
-    };
+    ProjectIdQueryParam &
+    SearchQueryParam &
+    SortOrderQueryParam<FeatureSortBy> &
+    PaginationQueryParam;
 }
 
 export interface GetFeatureChangeLogRouteInterface
