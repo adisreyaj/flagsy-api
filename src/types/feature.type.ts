@@ -1,4 +1,4 @@
-import { FeatureValueType } from '@prisma/client';
+import { FeatureValueType, Prisma } from '@prisma/client';
 import { RouteGenericInterface } from 'fastify/types/route';
 import {
   EnvironmentIdQueryParam,
@@ -12,7 +12,7 @@ import {
 export interface FeatureCreateData {
   key: string;
   projectId: string;
-  value: never;
+  value: Prisma.InputJsonValue;
   environmentOverrides: {
     environmentId: string;
     value: never;

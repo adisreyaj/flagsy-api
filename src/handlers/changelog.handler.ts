@@ -33,6 +33,7 @@ export class ChangelogHandler {
           return {};
       }
     };
+
     const [changeLogs, total] = await this.app.prisma.$transaction([
       this.app.prisma.featureChangeLog.findMany({
         select: {

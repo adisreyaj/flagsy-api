@@ -40,7 +40,7 @@ export class App {
         },
       },
       querystringParser: (str) => {
-        return queryString.parse(str.toLowerCase(), {
+        return queryString.parse(str, {
           parseNumbers: true,
         });
       },

@@ -2,19 +2,18 @@ import { FastifySchema } from 'fastify/types/schema';
 import z from 'zod';
 
 export abstract class FeaturesSchema {
-  static getAllFeaturesCommonQueryString = z.object({
-    sortBy: z.string().optional(),
-    direction: z.string().optional(),
-    search: z.string().optional(),
-    limit: z.number().optional(),
-    offset: z.number().optional(),
-    projectId: z.string().optional(),
-    environmentId: z.string().optional(),
-    projectKey: z.string().optional(),
-    environmentKey: z.string().optional(),
-  });
   public static getAllFeatures: FastifySchema = {
-    querystring: this.getAllFeaturesCommonQueryString,
+    querystring: z.object({
+      sortBy: z.string().optional(),
+      direction: z.string().optional(),
+      search: z.string().optional(),
+      limit: z.number().optional(),
+      offset: z.number().optional(),
+      projectId: z.string().optional(),
+      environmentId: z.string().optional(),
+      projectKey: z.string().optional(),
+      environmentKey: z.string().optional(),
+    }),
     response: {
       200: z.object({
         total: z.number(),

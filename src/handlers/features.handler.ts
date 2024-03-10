@@ -115,67 +115,68 @@ export class FeaturesHandler {
           message: 'Feature not found!',
         });
       }
-
-      const updatedFeature = await this.app.prisma.feature.update({
-        where: {
-          id: featureId,
-          ownerId: request.user.userId,
-        },
-        data: {
-          key: savedFeature.key, // To make sure `updatedAt` is updated
-          ...(description !== undefined ? { description } : {}),
-          ...(environmentId !== undefined
-            ? {
-                environmentOverrides: {
-                  upsert: {
-                    where: {
-                      environmentId_featureId: {
-                        environmentId: environmentId,
-                        featureId: featureId,
-                      },
-                    },
-                    update: {
-                      environment: {
-                        connect: {
-                          id: environmentId,
+      const updatedFeature = await this.app.prisma.$transaction(async () => {
+        const updatedFeature = await this.app.prisma.feature.update({
+          where: {
+            id: featureId,
+            ownerId: request.user.userId,
+          },
+          data: {
+            key: savedFeature.key, // To make sure `updatedAt` is updated
+            ...(description !== undefined ? { description } : {}),
+            ...(environmentId !== undefined
+              ? {
+                  environmentOverrides: {
+                    upsert: {
+                      where: {
+                        environmentId_featureId: {
+                          environmentId: environmentId,
+                          featureId: featureId,
                         },
                       },
-                      value: value as Prisma.InputJsonValue,
-                    },
-                    create: {
-                      environment: {
-                        connect: {
-                          id: environmentId,
+                      update: {
+                        environment: {
+                          connect: {
+                            id: environmentId,
+                          },
                         },
+                        value: value,
                       },
-                      value: value as Prisma.InputJsonValue,
+                      create: {
+                        environment: {
+                          connect: {
+                            id: environmentId,
+                          },
+                        },
+                        value: value,
+                      },
                     },
                   },
-                },
-              }
-            : {}),
-        },
-        select: {
-          key: true,
-          id: true,
-          value: true,
-        },
-      });
+                }
+              : {}),
+          },
+          select: {
+            id: true,
+          },
+        });
 
-      if (environmentId !== undefined) {
         const prevValueOfFeature =
           savedFeature.environmentOverrides?.[0]?.value ?? savedFeature.value;
 
-        await this.#changeLogService.logUpdateFeature({
-          environmentId: environmentId,
-          featureId: savedFeature.id,
-          changeData: FeatureChangelogUtil.buildChangeData(
-            prevValueOfFeature,
-            value as Prisma.InputJsonValue,
-          ),
-          ownerId: request.user.userId,
-        });
-      }
+        if (environmentId !== undefined && prevValueOfFeature !== value) {
+          await this.#changeLogService.logUpdateFeature({
+            environmentId: environmentId,
+            featureId: savedFeature.id,
+            changeData: FeatureChangelogUtil.buildChangeData(
+              prevValueOfFeature,
+              value as Prisma.JsonValue,
+            ),
+            ownerId: request.user.userId,
+          });
+        }
+        return updatedFeature;
+      });
+
       reply.status(200).send({
         feature: {
           id: updatedFeature.id,
@@ -239,6 +240,7 @@ export class FeaturesHandler {
       offset,
       limit,
     });
+
     reply.send(resultWithTotal);
   };
 

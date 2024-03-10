@@ -6,16 +6,18 @@ export abstract class FeatureChangelogUtil {
     newValue?: FeatureChangeDataValueType,
   ): Prisma.InputJsonValue => {
     return {
-      old: oldValue
-        ? {
-            value: oldValue,
-          }
-        : undefined,
-      new: newValue
-        ? {
-            value: newValue,
-          }
-        : undefined,
+      old:
+        oldValue !== undefined
+          ? {
+              value: oldValue,
+            }
+          : undefined,
+      new:
+        newValue !== undefined
+          ? {
+              value: newValue,
+            }
+          : undefined,
     };
   };
 }
