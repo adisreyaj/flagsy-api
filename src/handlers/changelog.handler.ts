@@ -15,7 +15,7 @@ export class ChangelogHandler {
     request,
     reply,
   ) => {
-    const { sortBy, direction } = request.query;
+    const { sortBy, direction, offset, limit } = request.query;
     const getOrderBy = (
       sortBy?: ChangeLogSortByKey,
       direction?: string,
@@ -63,6 +63,8 @@ export class ChangelogHandler {
           type: true,
         },
         orderBy: getOrderBy(sortBy, direction),
+        skip: offset,
+        take: limit,
       }),
       this.app.prisma.featureChangeLog.count({}),
     ]);
