@@ -1,5 +1,6 @@
-import { Prisma } from '@prisma/client';
+import { $Enums, Prisma } from '@prisma/client';
 import { FastifyInstance } from 'fastify';
+import queryString from 'query-string-esm';
 import {
   ChangeLogSortByKey,
   GetAllChangelogRouteInterface,
@@ -15,7 +16,24 @@ export class ChangelogHandler {
     request,
     reply,
   ) => {
-    const { sortBy, direction, offset, limit } = request.query;
+    const { sortBy, direction, offset, limit, filter } = request.query;
+
+    const { environment, type } = queryString.parse(filter ?? '', {
+      arrayFormat: 'separator',
+      arrayFormatSeparator: ':',
+      decode: true,
+    });
+
+    const environmentIds: string[] | undefined =
+      environment != undefined
+        ? Array.isArray(environment)
+          ? environment
+          : [environment]
+        : undefined;
+
+    const types: string[] | undefined =
+      type != undefined ? (Array.isArray(type) ? type : [type]) : undefined;
+
     const getOrderBy = (
       sortBy?: ChangeLogSortByKey,
       direction?: string,
@@ -36,6 +54,24 @@ export class ChangelogHandler {
 
     const [changeLogs, total] = await this.app.prisma.$transaction([
       this.app.prisma.featureChangeLog.findMany({
+        where: {
+          ...(environmentIds !== undefined
+            ? {
+                environment: {
+                  id: {
+                    in: environmentIds,
+                  },
+                },
+              }
+            : {}),
+          ...(types !== undefined
+            ? {
+                type: {
+                  in: types as $Enums.FeatureChangeLogType[],
+                },
+              }
+            : {}),
+        },
         select: {
           feature: {
             select: {
@@ -66,7 +102,19 @@ export class ChangelogHandler {
         skip: offset,
         take: limit,
       }),
-      this.app.prisma.featureChangeLog.count({}),
+      this.app.prisma.featureChangeLog.count({
+        where: {
+          ...(environmentIds !== undefined
+            ? {
+                environment: {
+                  id: {
+                    in: environmentIds,
+                  },
+                },
+              }
+            : {}),
+        },
+      }),
     ]);
 
     reply.send({

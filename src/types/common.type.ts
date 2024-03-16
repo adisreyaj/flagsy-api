@@ -26,3 +26,7 @@ export interface PaginationQueryParam {
   offset?: number;
   limit?: number;
 }
+
+export interface FilterQueryParam {
+  filter?: string;
+}

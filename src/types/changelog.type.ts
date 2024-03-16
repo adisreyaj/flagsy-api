@@ -1,6 +1,7 @@
 import { RouteGenericInterface } from 'fastify/types/route';
 import {
   EnvironmentIdQueryParam,
+  FilterQueryParam,
   PaginationQueryParam,
   ProjectIdQueryParam,
   SearchQueryParam,
@@ -12,7 +13,8 @@ export interface GetAllChangelogRouteInterface extends RouteGenericInterface {
     ProjectIdQueryParam &
     SortOrderQueryParam<ChangeLogSortByKey> &
     SearchQueryParam &
-    PaginationQueryParam;
+    PaginationQueryParam &
+    FilterQueryParam;
 }
 
 export enum ChangeLogSortByKey {

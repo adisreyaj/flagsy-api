@@ -194,6 +194,7 @@ export class FeaturesHandler {
     request,
     reply,
   ) => {
+    this.app.log.debug('Getting all features');
     const {
       environmentId,
       projectId,

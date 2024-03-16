@@ -4,16 +4,20 @@ import cors, { type FastifyCorsOptions } from '@fastify/cors';
 import { fastifyEnv } from '@fastify/env';
 import { fastifyJwt } from '@fastify/jwt';
 import { JsonSchemaToTsProvider } from '@fastify/type-provider-json-schema-to-ts';
+import dotenv from 'dotenv';
 import Fastify, { FastifyInstance } from 'fastify';
 import {
   serializerCompiler,
   validatorCompiler,
   ZodTypeProvider,
 } from 'fastify-type-provider-zod';
+import pino from 'pino';
+import type { LokiOptions } from 'pino-loki';
+import { PrettyOptions } from 'pino-pretty';
 import queryString from 'query-string-esm';
 import { ZodError } from 'zod';
-import { ENV_SCHEMA } from './config/app.config';
 
+import { ENV_SCHEMA } from './config/app.config';
 import { validateTokenPlugin } from './plugins/authentication.plugin';
 import prisma from './plugins/prisma.plugin';
 import { ACCESS_KEY_ROUTES } from './routes/access-key.route';
@@ -29,15 +33,11 @@ export class App {
   public app: FastifyInstance;
 
   constructor() {
+    dotenv.config();
     this.app = Fastify({
       logger: {
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            ignore: 'pid,hostname,req,res,reqId',
-            colorize: true,
-          },
-        },
+        stream: pino.multistream(this.getLoggerStreams()),
+        level: 'info',
       },
       querystringParser: (str) => {
         return queryString.parse(str, {
@@ -54,8 +54,11 @@ export class App {
   }
 
   private async init() {
-    this.setupZodSchemaValidator();
     await this.setupEnvConfig();
+    this.app.setErrorHandler((error) => {
+      this.app.log.error(error);
+    });
+    this.setupZodSchemaValidator();
     this.setupCors();
     this.setupAuth();
     this.setupCookies();
@@ -70,7 +73,7 @@ export class App {
     this.app.setErrorHandler((error, _request, reply) => {
       if (error instanceof ZodError) {
         const isDev = this.app.config.NODE_ENV === 'development';
-        reply.status(400).send({
+        return reply.status(400).send({
           message: 'Invalid request',
           ...(isDev ? { errors: error.issues } : {}),
         });
@@ -140,6 +143,34 @@ export class App {
   private setupPrisma() {
     this.app.register(prisma);
   }
+
+  private getLoggerStreams() {
+    const pinoTransport = pino.transport<PrettyOptions>({
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        singleLine: true,
+        translateTime: 'HH:MM:ss Z',
+        ignore: 'pid,hostname',
+      },
+    });
+    const lokiTransport = pino.transport<LokiOptions>({
+      target: 'pino-loki',
+      options: {
+        batching: false,
+        host: process.env.LOKI_URL!,
+        basicAuth: {
+          username: process.env.LOKI_USERNAME!,
+          password: process.env.LOKI_TOKEN!,
+        },
+      },
+    });
+
+    return [
+      { level: 'debug', stream: lokiTransport },
+      { level: 'debug', stream: pinoTransport },
+    ];
+  }
 }
 
 declare module 'fastify' {
@@ -149,6 +180,9 @@ declare module 'fastify' {
       JWT_SECRET: string;
       COOKIE_SECRET: string;
       NODE_ENV: string;
+      LOKI_URL: string;
+      LOKI_USERNAME: string;
+      LOKI_TOKEN: string;
     };
     validateToken: FastifyAuthFunction;
   }

@@ -82,7 +82,10 @@ export class AuthHandler {
     const isMatch = await compare(password, user.password);
 
     if (!isMatch) {
-      throw new Error('Invalid email or password');
+      this.app.log.debug('Invalid credentials');
+      return reply.status(401).send({
+        message: 'Invalid credentials',
+      });
     }
 
     const jwt = await AuthUtil.generateJWT(reply, user.id, user.orgs?.[0].id);
