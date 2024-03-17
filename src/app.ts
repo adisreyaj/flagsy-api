@@ -35,6 +35,7 @@ export class App {
   constructor() {
     dotenv.config();
     this.app = Fastify({
+      disableRequestLogging: true,
       logger: {
         stream: pino.multistream(this.getLoggerStreams()),
         level: 'info',
@@ -150,7 +151,8 @@ export class App {
       options: {
         colorize: true,
         singleLine: true,
-        translateTime: 'HH:MM:ss Z',
+        colorizeObjects: true,
+        translateTime: 'SYS:hh:MM:ss TT',
         ignore: 'pid,hostname',
       },
     });

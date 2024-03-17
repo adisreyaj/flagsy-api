@@ -212,6 +212,13 @@ export class FeaturesHandler {
 
     const resultWithTotal = await this.getFeatures({
       where: {
+        ...(search && search?.trim() !== ''
+          ? {
+              key: {
+                contains: search.trim().toLowerCase(),
+              },
+            }
+          : {}),
         project: {
           ...(projectId !== undefined
             ? {
