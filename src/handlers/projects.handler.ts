@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { FastifyInstance } from 'fastify';
+import { omit } from 'lodash';
 import { Handler } from '../types/handler.type';
 
 export class ProjectsHandler {
@@ -24,23 +25,52 @@ export class ProjectsHandler {
   };
 
   public getAll: Handler = async (request, reply) => {
-    const projects = await this.app.prisma.project.findMany({
-      where: {
-        ownerId: request.user.userId,
-      },
-      select: {
-        id: true,
-        name: true,
-        owner: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
+    const [projects, total] = await this.app.prisma.$transaction([
+      this.app.prisma.project.findMany({
+        where: {
+          ownerId: request.user.userId,
         },
-      },
+        select: {
+          id: true,
+          name: true,
+          key: true,
+          description: true,
+          _count: {
+            select: {
+              features: true,
+              environments: true,
+            },
+          },
+          org: {
+            select: {
+              id: true,
+              key: true,
+              name: true,
+            },
+          },
+          owner: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          createdAt: true,
+        },
+      }),
+      this.app.prisma.project.count({
+        where: {
+          ownerId: request.user.userId,
+        },
+      }),
+    ]);
+    reply.send({
+      data: projects.map((project) => ({
+        ...omit(project, '_count'),
+        count: project._count,
+      })),
+      total,
     });
-    reply.send(projects);
   };
 }
