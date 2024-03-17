@@ -150,7 +150,6 @@ export class App {
       target: 'pino-pretty',
       options: {
         colorize: true,
-        singleLine: true,
         colorizeObjects: true,
         translateTime: 'SYS:hh:MM:ss TT',
         ignore: 'pid,hostname',

@@ -1,11 +1,12 @@
-import { $Enums, Prisma } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 import { FastifyInstance } from 'fastify';
-import queryString from 'query-string-esm';
+import { isEmpty } from 'lodash';
 import {
   ChangeLogSortByKey,
   GetAllChangelogRouteInterface,
 } from '../types/changelog.type';
 import { Handler } from '../types/handler.type';
+import { QueryParamParseUtil } from '../util/query-param-parse.util';
 
 export class ChangelogHandler {
   public constructor(private readonly app: FastifyInstance) {
@@ -16,58 +17,40 @@ export class ChangelogHandler {
     request,
     reply,
   ) => {
-    const { sortBy, direction, offset, limit, filter } = request.query;
-
-    const { environment, type } = queryString.parse(filter ?? '', {
-      arrayFormat: 'separator',
-      arrayFormatSeparator: ':',
-      decode: true,
-    });
-
-    const environmentIds: string[] | undefined =
-      environment != undefined
-        ? Array.isArray(environment)
-          ? environment
-          : [environment]
-        : undefined;
-
-    const types: string[] | undefined =
-      type != undefined ? (Array.isArray(type) ? type : [type]) : undefined;
-
-    const getOrderBy = (
-      sortBy?: ChangeLogSortByKey,
-      direction?: string,
-    ): Prisma.FeatureChangeLogOrderByWithRelationInput => {
-      switch (sortBy) {
-        case ChangeLogSortByKey.Date:
-          return { createdAt: direction as Prisma.SortOrder };
-        case ChangeLogSortByKey.Feature:
-          return {
-            feature: {
-              key: direction as Prisma.SortOrder,
-            },
-          };
-        default:
-          return {};
-      }
-    };
+    const { sort, pagination, filters } = QueryParamParseUtil.parse(
+      request.query,
+      {
+        sortKeyTransform: (key: string) => {
+          switch (key) {
+            case ChangeLogSortByKey.Date:
+              return 'createdAt';
+            case ChangeLogSortByKey.Feature:
+              return 'feature';
+            default:
+              return key;
+          }
+        },
+      },
+    );
 
     const [changeLogs, total] = await this.app.prisma.$transaction([
       this.app.prisma.featureChangeLog.findMany({
         where: {
-          ...(environmentIds !== undefined
+          ...(filters?.['environmentIds'] !== undefined
             ? {
                 environment: {
                   id: {
-                    in: environmentIds,
+                    in: filters?.['environmentIds'],
                   },
                 },
               }
             : {}),
-          ...(types !== undefined
+          ...(filters?.['types'] !== undefined
             ? {
                 type: {
-                  in: types as $Enums.FeatureChangeLogType[],
+                  in: filters?.[
+                    'environmentIds'
+                  ] as $Enums.FeatureChangeLogType[],
                 },
               }
             : {}),
@@ -98,18 +81,33 @@ export class ChangelogHandler {
           createdAt: true,
           type: true,
         },
-        orderBy: getOrderBy(sortBy, direction),
-        skip: offset,
-        take: limit,
+        ...(!isEmpty(sort)
+          ? {
+              orderBy: {
+                [sort.sortBy]: sort.direction,
+              },
+            }
+          : {}),
+        skip: pagination.offset,
+        take: pagination.limit,
       }),
       this.app.prisma.featureChangeLog.count({
         where: {
-          ...(environmentIds !== undefined
+          ...(filters?.['environmentIds'] !== undefined
             ? {
                 environment: {
                   id: {
-                    in: environmentIds,
+                    in: filters?.['environmentIds'],
                   },
+                },
+              }
+            : {}),
+          ...(filters?.['types'] !== undefined
+            ? {
+                type: {
+                  in: filters?.[
+                    'environmentIds'
+                  ] as $Enums.FeatureChangeLogType[],
                 },
               }
             : {}),

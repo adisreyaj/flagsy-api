@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 export interface ProjectIdQueryParam {
   projectId?: string;
   projectKey?: string;
@@ -6,11 +8,6 @@ export interface ProjectIdQueryParam {
 export interface EnvironmentIdQueryParam {
   environmentId?: string;
   environmentKey?: string;
-}
-
-export enum SortOrder {
-  Asc = 'asc',
-  Desc = 'desc',
 }
 
 export interface SortOrderQueryParam<SortKey = unknown> {
@@ -30,3 +27,5 @@ export interface PaginationQueryParam {
 export interface FilterQueryParam {
   filter?: string;
 }
+
+export type SortOrder = Prisma.SortOrder;

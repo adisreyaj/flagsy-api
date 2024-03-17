@@ -14,6 +14,7 @@ import {
 import { Handler } from '../types/handler.type';
 import { FastifyRequestWithAccessKey } from '../types/public-api.type';
 import { FeatureChangelogUtil } from '../util/feature-changelog.util';
+import { QueryParamParseUtil } from '../util/query-param-parse.util';
 import { FeatureChangeLogType } from '.prisma/client';
 
 export class FeaturesHandler {
@@ -195,20 +196,24 @@ export class FeaturesHandler {
     reply,
   ) => {
     this.app.log.debug('Getting all features');
-    const {
-      environmentId,
-      projectId,
-      environmentKey,
-      projectKey,
-      sortBy,
-      direction,
-      search,
-      offset,
-      limit,
-    } = request.query;
+    const { environmentId, projectId, environmentKey, projectKey } =
+      request.query;
 
-    const sort = sortBy ?? FeatureSortBy.Key;
-    const order = direction ?? SortOrder.Asc;
+    const { sort, search, pagination } = QueryParamParseUtil.parse(
+      request.query,
+      {
+        sortKeyTransform: (key: string) => {
+          switch (key) {
+            case FeatureSortBy.Key:
+              return 'createdAt';
+            case FeatureSortBy.LastUpdated:
+              return 'updatedAt';
+            default:
+              return FeatureSortBy.Key;
+          }
+        },
+      },
+    );
 
     const resultWithTotal = await this.getFeatures({
       where: {
@@ -243,10 +248,10 @@ export class FeaturesHandler {
       },
       environmentId,
       environmentKey,
-      sort,
-      order,
-      offset,
-      limit,
+      sortBy: sort?.sortBy,
+      order: sort?.direction,
+      offset: pagination.offset,
+      limit: pagination.limit,
     });
 
     reply.send(resultWithTotal);
@@ -312,7 +317,7 @@ export class FeaturesHandler {
       const { sortBy, sortOrder } = request.query;
 
       const sort = sortBy ?? FeatureSortBy.Key;
-      const order = sortOrder ?? SortOrder.Asc;
+      const order: SortOrder = sortOrder ?? 'asc';
 
       const featuresWithEnvironmentSpecificInfo = await this.getFeatures({
         where: {
@@ -321,7 +326,7 @@ export class FeaturesHandler {
         },
         environmentId: environmentId,
         environmentKey: undefined,
-        sort: sort,
+        sortBy: sort,
         order: order,
       });
 
@@ -332,8 +337,8 @@ export class FeaturesHandler {
     where,
     environmentId,
     environmentKey,
-    sort = FeatureSortBy.Key,
-    order = SortOrder.Asc,
+    sortBy = FeatureSortBy.Key,
+    order = 'asc',
     offset = 0,
     limit = 1000,
   }: GetFeaturesArgs) {
@@ -390,7 +395,7 @@ export class FeaturesHandler {
           createdAt: true,
         },
         orderBy: {
-          [sort]: order,
+          [sortBy]: order,
         },
         skip: offset,
         take: limit,
@@ -430,7 +435,7 @@ type GetFeaturesArgs = {
   where: Prisma.FeatureWhereInput;
   environmentId?: string;
   environmentKey?: string;
-  sort?: FeatureSortBy;
+  sortBy?: string;
   order?: SortOrder;
   offset?: number;
   limit?: number;
