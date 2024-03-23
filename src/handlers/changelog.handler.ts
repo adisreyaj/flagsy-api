@@ -33,24 +33,24 @@ export class ChangelogHandler {
       },
     );
 
+    console.log(sort, pagination, filters);
+
     const [changeLogs, total] = await this.app.prisma.$transaction([
       this.app.prisma.featureChangeLog.findMany({
         where: {
-          ...(filters?.['environmentIds'] !== undefined
+          ...(filters?.['environment'] !== undefined
             ? {
                 environment: {
                   id: {
-                    in: filters?.['environmentIds'],
+                    in: filters?.['environment'],
                   },
                 },
               }
             : {}),
-          ...(filters?.['types'] !== undefined
+          ...(filters?.['type'] !== undefined
             ? {
                 type: {
-                  in: filters?.[
-                    'environmentIds'
-                  ] as $Enums.FeatureChangeLogType[],
+                  in: filters?.['type'] as $Enums.FeatureChangeLogType[],
                 },
               }
             : {}),

@@ -25,6 +25,7 @@ import { AUTH_ROUTES } from './routes/auth.routes';
 import { CHANGELOG_ROUTES } from './routes/changelog.routes';
 import { ENVIRONMENT_ROUTES } from './routes/environments.routes';
 import { FEATURE_ROUTES } from './routes/feature.routes';
+import { ORG_ROUTES } from './routes/org.routes';
 import { PROJECT_ROUTES } from './routes/projects.routes';
 import { PUBLIC_ROUTES } from './routes/public.routes';
 import { USER_ROUTES } from './routes/users.routes';
@@ -85,6 +86,7 @@ export class App {
   private registerRoutes() {
     this.app.register(AUTH_ROUTES, { prefix: '/auth' });
     this.app.register(USER_ROUTES, { prefix: '/users' });
+    this.app.register(ORG_ROUTES, { prefix: '/orgs' });
     this.app.register(ENVIRONMENT_ROUTES, { prefix: '/environments' });
     this.app.register(PROJECT_ROUTES, { prefix: '/projects' });
     this.app.register(FEATURE_ROUTES, { prefix: '/features' });

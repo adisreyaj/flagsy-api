@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
@@ -60,6 +61,7 @@ model Project {
   featureChangeLogs FeatureChangeLog[]
 
   @@unique([key, orgId])
+  @@fulltext([key, name])
 }
 
 model Environment {
@@ -83,6 +85,7 @@ model Environment {
   accessKeys        AccessKey[]
 
   @@unique([key, projectId, orgId])
+  @@fulltext([key, name])
 }
 
 model Feature {
@@ -110,6 +113,7 @@ model Feature {
   deleted Boolean @default(false)
 
   @@unique([key, projectId, orgId])
+  @@fulltext([key])
 }
 
 model FeatureEnvironmentConfig {

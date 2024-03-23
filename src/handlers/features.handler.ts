@@ -220,7 +220,7 @@ export class FeaturesHandler {
         ...(search && search?.trim() !== ''
           ? {
               key: {
-                contains: search.trim().toLowerCase(),
+                contains: search.trim(),
               },
             }
           : {}),
