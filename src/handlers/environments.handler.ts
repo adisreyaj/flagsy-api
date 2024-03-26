@@ -29,6 +29,7 @@ export class EnvironmentsHandler {
     });
     reply.send(environment);
   };
+
   public getAll: Handler<GetAllEnvironmentRouteInterface> = async (
     request,
     reply,
@@ -37,7 +38,9 @@ export class EnvironmentsHandler {
 
     const environments = await this.app.prisma.environment.findMany({
       where: {
-        ownerId: request.user.userId,
+        org: {
+          id: request.user.orgId,
+        },
         projectId,
       },
       select: {

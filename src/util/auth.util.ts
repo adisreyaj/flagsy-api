@@ -1,4 +1,7 @@
+import { genSalt, hash } from 'bcryptjs';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { ROLE_SCOPE_MAP } from '../config/rbac.config';
+import { UserRole } from '../types/user.type';
 
 export abstract class AuthUtil {
   public static setCookie = (reply: FastifyReply, jwt: string) => {
@@ -9,10 +12,14 @@ export abstract class AuthUtil {
     reply: FastifyReply,
     userId: string,
     orgId: string,
+    roles: string[] = [],
+    scopes: string[] = [],
   ): Promise<string> => {
     return await reply.jwtSign({
       userId: userId,
       orgId: orgId,
+      roles: roles,
+      scopes: scopes,
     });
   };
 
@@ -42,4 +49,21 @@ export abstract class AuthUtil {
         return reply.status(401).send(new Error('Unauthorized'));
       }
     };
+
+  public static hashPassword = async (password: string): Promise<string> => {
+    const salt = await genSalt(10);
+    return await hash(password, salt);
+  };
+
+  public static getScopesForRoles = (roles: UserRole[]): string[] => {
+    const flattenScope = (role: UserRole) => {
+      return (ROLE_SCOPE_MAP.get(role) ?? []).reduce((acc, item) => {
+        return [...acc, ...item.permissions.map((p) => `${item.scope}:${p}`)];
+      }, [] as string[]);
+    };
+
+    return roles.reduce((acc, role) => {
+      return [...acc, ...flattenScope(role)];
+    }, [] as string[]);
+  };
 }

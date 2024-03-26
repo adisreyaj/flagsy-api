@@ -15,12 +15,14 @@ export const AUTH_ROUTES = async (app: FastifyInstance) => {
   app.route({
     method: 'POST',
     url: '/login',
+    schema: UserSchema.login,
     handler: handler.login,
   });
 
   app.route({
     method: 'GET',
     url: '/me',
+    schema: UserSchema.me,
     preHandler: app.auth([app.validateToken]),
     handler: handler.me,
   });
@@ -30,5 +32,13 @@ export const AUTH_ROUTES = async (app: FastifyInstance) => {
     url: '/logout',
     preHandler: app.auth([app.validateToken]),
     handler: handler.logout,
+  });
+
+  app.route({
+    method: 'POST',
+    url: '/update-password',
+    schema: UserSchema.updatePassword,
+    preHandler: app.auth([app.validateToken]),
+    handler: handler.updatePassword,
   });
 };

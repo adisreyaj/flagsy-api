@@ -217,13 +217,6 @@ export class FeaturesHandler {
 
     const resultWithTotal = await this.getFeatures({
       where: {
-        ...(search && search?.trim() !== ''
-          ? {
-              key: {
-                contains: search.trim(),
-              },
-            }
-          : {}),
         project: {
           ...(projectId !== undefined
             ? {
@@ -236,11 +229,20 @@ export class FeaturesHandler {
               }
             : {}),
         },
-        ownerId: request.user.userId,
+        org: {
+          id: request.user.orgId,
+        },
         ...(search !== undefined && search?.trim() !== ''
           ? {
               key: {
                 startsWith: search,
+              },
+            }
+          : {}),
+        ...(search && search?.trim() !== ''
+          ? {
+              key: {
+                contains: search.trim(),
               },
             }
           : {}),

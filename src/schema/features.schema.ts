@@ -1,14 +1,13 @@
 import { FastifySchema } from 'fastify/types/schema';
 import z from 'zod';
+import { CommonSchema } from './common.schema';
 
 export abstract class FeaturesSchema {
   public static getAllFeatures: FastifySchema = {
     querystring: z.object({
-      sortBy: z.string().optional(),
-      direction: z.string().optional(),
-      search: z.string().optional(),
-      limit: z.number().optional(),
-      offset: z.number().optional(),
+      ...CommonSchema.pagination,
+      ...CommonSchema.sort,
+      ...CommonSchema.search,
       projectId: z.string().optional(),
       environmentId: z.string().optional(),
       projectKey: z.string().optional(),

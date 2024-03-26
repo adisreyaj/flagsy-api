@@ -28,7 +28,9 @@ export class ProjectsHandler {
     const [projects, total] = await this.app.prisma.$transaction([
       this.app.prisma.project.findMany({
         where: {
-          ownerId: request.user.userId,
+          org: {
+            id: request.user.orgId,
+          },
         },
         select: {
           id: true,

@@ -1,21 +1,21 @@
 import { FastifyInstance } from 'fastify';
 import { Permission, Scope } from '../config/rbac.config';
-import { OrgsHandler } from '../handlers/orgs.handler';
+import { StatsHandler } from '../handlers/stats.handler';
 import { validateRbac } from '../plugins/rbac.plugin';
 
-export const ORG_ROUTES = async (app: FastifyInstance) => {
-  const handler = new OrgsHandler(app);
+export const STATS_ROUTES = async (app: FastifyInstance) => {
+  const handler = new StatsHandler(app);
 
   app.route({
     method: 'GET',
-    url: '/',
+    url: '/overview',
     preHandler: [
       app.auth([app.validateToken]),
       validateRbac(
         ['USER', 'ADMIN'],
         [
           {
-            scope: Scope.Org,
+            scope: Scope.Feature,
             permissions: [Permission.Read],
           },
         ],

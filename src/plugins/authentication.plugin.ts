@@ -3,7 +3,12 @@ import fp from 'fastify-plugin';
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: { userId: string; orgId: string };
+    payload: {
+      userId: string;
+      orgId: string;
+      roles: string[];
+      scopes: string[];
+    };
   }
 }
 

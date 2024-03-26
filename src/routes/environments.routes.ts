@@ -1,5 +1,7 @@
 import { FastifyInstance } from 'fastify';
+import { Permission, Scope } from '../config/rbac.config';
 import { EnvironmentsHandler } from '../handlers/environments.handler';
+import { validateRbac } from '../plugins/rbac.plugin';
 import { EnvironmentsSchema } from '../schema/environments.schema';
 import {
   CreateEnvironmentRouteInterface,
@@ -12,7 +14,18 @@ export const ENVIRONMENT_ROUTES = async (app: FastifyInstance) => {
     method: 'GET',
     url: '/',
     schema: EnvironmentsSchema.getAllEnvironments,
-    preHandler: app.auth([app.validateToken]),
+    preHandler: [
+      app.auth([app.validateToken]),
+      validateRbac(
+        ['USER', 'ADMIN'],
+        [
+          {
+            scope: Scope.Environment,
+            permissions: [Permission.Read],
+          },
+        ],
+      ),
+    ],
     handler: handler.getAll,
   });
 
@@ -20,7 +33,18 @@ export const ENVIRONMENT_ROUTES = async (app: FastifyInstance) => {
     method: 'POST',
     url: '/',
     schema: EnvironmentsSchema.createEnvironment,
-    preHandler: app.auth([app.validateToken]),
+    preHandler: [
+      app.auth([app.validateToken]),
+      validateRbac(
+        ['ADMIN'],
+        [
+          {
+            scope: Scope.Environment,
+            permissions: [Permission.Write],
+          },
+        ],
+      ),
+    ],
     handler: handler.create,
   });
 };

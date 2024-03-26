@@ -1,8 +1,11 @@
 import { Prisma } from '@prisma/client';
-import { compare, genSalt, hash } from 'bcryptjs';
+import { compare } from 'bcryptjs';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { Handler } from '../types/handler.type';
-import { CreateUserRouteInterface } from '../types/user.type';
+import {
+  CreateUserRouteInterface,
+  UpdatePasswordRouteInterface,
+} from '../types/user.type';
 
 import { AuthUtil } from '../util/auth.util';
 
@@ -17,8 +20,7 @@ export class AuthHandler {
   ) => {
     const { email, password, firstName, lastName, orgName } = request.body;
 
-    const salt = await genSalt(10);
-    const hashedPassword = await hash(password, salt);
+    const hashedPassword = await AuthUtil.hashPassword(password);
 
     const user = await this.app.prisma.user.create({
       data: {
@@ -65,6 +67,7 @@ export class AuthHandler {
         lastName: true,
         password: true,
         email: true,
+        role: true,
         orgs: {
           take: 1,
           select: {
@@ -88,7 +91,13 @@ export class AuthHandler {
       });
     }
 
-    const jwt = await AuthUtil.generateJWT(reply, user.id, user.orgs?.[0].id);
+    const jwt = await AuthUtil.generateJWT(
+      reply,
+      user.id,
+      user.orgs?.[0].id,
+      [user.role],
+      AuthUtil.getScopesForRoles([user.role]),
+    );
 
     AuthUtil.setCookie(reply, jwt);
     reply.send({
@@ -118,14 +127,73 @@ export class AuthHandler {
         firstName: true,
         lastName: true,
         email: true,
+        role: true,
       },
     });
 
     if (!user) {
-      reply.send();
+      reply.status(404).send({
+        message: 'User not found',
+      });
       return;
     }
 
-    reply.send(user);
+    reply.send({
+      ...user,
+      role: user.role,
+      scopes: AuthUtil.getScopesForRoles([user.role]),
+    });
+  };
+
+  public updatePassword: Handler<UpdatePasswordRouteInterface> = async (
+    request,
+    reply,
+  ) => {
+    const { userId } = request.user;
+    const { newPassword, oldPassword } = request.body;
+    const userSaved = await this.app.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+
+    if (!userSaved) {
+      return reply.status(400).send({
+        message: 'Bad request',
+      });
+    }
+
+    const isPasswordValid = await compare(oldPassword, userSaved.password);
+
+    if (!isPasswordValid) {
+      return reply.status(401).send({
+        message: 'Invalid credentials',
+      });
+    }
+
+    const hashedPassword = await AuthUtil.hashPassword(newPassword);
+
+    const user = await this.app.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        password: hashedPassword,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+
+    reply.send({
+      id: user.id,
+    });
   };
 }

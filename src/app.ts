@@ -18,6 +18,7 @@ import queryString from 'query-string-esm';
 import { ZodError } from 'zod';
 
 import { ENV_SCHEMA } from './config/app.config';
+import { CombinedScopeAndPermission } from './config/rbac.config';
 import { validateTokenPlugin } from './plugins/authentication.plugin';
 import prisma from './plugins/prisma.plugin';
 import { ACCESS_KEY_ROUTES } from './routes/access-key.route';
@@ -29,6 +30,7 @@ import { ORG_ROUTES } from './routes/org.routes';
 import { PROJECT_ROUTES } from './routes/projects.routes';
 import { PUBLIC_ROUTES } from './routes/public.routes';
 import { USER_ROUTES } from './routes/users.routes';
+import { UserRole } from './types/user.type';
 
 export class App {
   public app: FastifyInstance;
@@ -177,6 +179,10 @@ export class App {
 }
 
 declare module 'fastify' {
+  interface FastifyRequest {
+    requiredRoles: UserRole[];
+    requiredScopes: CombinedScopeAndPermission[];
+  }
   interface FastifyInstance {
     config: {
       PORT: number;

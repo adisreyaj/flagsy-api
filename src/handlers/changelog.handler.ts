@@ -7,6 +7,7 @@ import {
 } from '../types/changelog.type';
 import { Handler } from '../types/handler.type';
 import { QueryParamParseUtil } from '../util/query-param-parse.util';
+import { FeatureChangeLogType } from '.prisma/client';
 
 export class ChangelogHandler {
   public constructor(private readonly app: FastifyInstance) {
@@ -105,9 +106,7 @@ export class ChangelogHandler {
           ...(filters?.['types'] !== undefined
             ? {
                 type: {
-                  in: filters?.[
-                    'environmentIds'
-                  ] as $Enums.FeatureChangeLogType[],
+                  in: filters?.['environmentIds'] as FeatureChangeLogType[],
                 },
               }
             : {}),
