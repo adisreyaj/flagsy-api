@@ -33,6 +33,7 @@ export abstract class FeaturesSchema {
           lastName: z.string(),
         }),
       }),
+      ...CommonSchema.errors,
     },
   } as const;
 }

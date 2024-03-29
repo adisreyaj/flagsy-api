@@ -1,7 +1,8 @@
 import { genSalt, hash } from 'bcryptjs';
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyReply, preHandlerHookHandler } from 'fastify';
 import { ROLE_SCOPE_MAP } from '../config/rbac.config';
 import { UserRole } from '../types/user.type';
+import { ReqResUtil } from './reqres.util';
 
 export abstract class AuthUtil {
   public static setCookie = (reply: FastifyReply, jwt: string) => {
@@ -24,8 +25,8 @@ export abstract class AuthUtil {
   };
 
   public static userHasAccessToFeature =
-    (app: FastifyInstance) =>
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    (app: FastifyInstance): preHandlerHookHandler =>
+    async (request, reply) => {
       const { featureId } = request.params as { featureId: string };
 
       const feature = await app.prisma.feature.findUnique({
@@ -40,14 +41,18 @@ export abstract class AuthUtil {
       });
 
       if (!feature) {
-        return reply.status(404).send(new Error('Feature not found'));
+        return reply
+          .status(404)
+          .send(ReqResUtil.errorMessage('Feature not found'));
       }
-      if (
-        feature?.orgId !== request.user.orgId ||
-        feature?.ownerId !== request.user.userId
-      ) {
-        return reply.status(401).send(new Error('Unauthorized'));
+      if (feature?.orgId !== request.user.orgId) {
+        return reply
+          .status(401)
+          .send(
+            ReqResUtil.errorMessage('No permission to access this resource'),
+          );
       }
+      return;
     };
 
   public static hashPassword = async (password: string): Promise<string> => {

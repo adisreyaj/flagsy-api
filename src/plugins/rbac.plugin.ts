@@ -11,6 +11,7 @@ export const validateRbac = (
 ): preHandlerHookHandler => {
   return (request, reply, done) => {
     const userScopesSet = new Set(request.user.scopes ?? []);
+    request.log.info('Permission check');
 
     const requiredRoles = roles;
     const requiredScopesWithPermissions = scopes.flatMap((scope) => {
@@ -33,6 +34,7 @@ export const validateRbac = (
         reason: 'No permission to access this resource',
         requiredScopes: requiredScopesWithPermissions,
       });
+
       return reply.status(401).send({
         message: 'No permission to access this resource',
       });

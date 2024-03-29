@@ -68,7 +68,6 @@ export const FEATURE_ROUTES = async (app: FastifyInstance) => {
     url: '/:featureId',
     preHandler: [
       app.auth([app.validateToken]),
-      AuthUtil.userHasAccessToFeature(app),
       validateRbac(
         ['ADMIN'],
         [
@@ -78,6 +77,7 @@ export const FEATURE_ROUTES = async (app: FastifyInstance) => {
           },
         ],
       ),
+      AuthUtil.userHasAccessToFeature(app),
     ],
     handler: handler.update,
   });
@@ -87,6 +87,15 @@ export const FEATURE_ROUTES = async (app: FastifyInstance) => {
     url: '/:featureId',
     preHandler: [
       app.auth([app.validateToken]),
+      validateRbac(
+        ['ADMIN'],
+        [
+          {
+            scope: Scope.Feature,
+            permissions: [Permission.Delete],
+          },
+        ],
+      ),
       AuthUtil.userHasAccessToFeature(app),
     ],
     handler: handler.deleteFeature,

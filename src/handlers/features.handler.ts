@@ -79,9 +79,9 @@ export class FeaturesHandler {
       });
     } catch (e) {
       this.app.log.error(e);
-      reply.status(500).send({
-        message: 'Failed to create feature!',
-      });
+      reply
+        .status(500)
+        .send(ReqResUtil.errorMessage('Failed to create feature!'));
     }
   };
 
@@ -186,9 +186,9 @@ export class FeaturesHandler {
       });
     } catch (e) {
       this.app.log.error(e);
-      reply.status(500).send({
-        message: 'Failed to update feature!',
-      });
+      reply
+        .status(500)
+        .send(ReqResUtil.errorMessage('Failed to update feature!'));
     }
   };
 
