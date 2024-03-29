@@ -3,6 +3,8 @@ import z from 'zod';
 import { CommonSchema } from './common.schema';
 
 export abstract class UserSchema {
+  public static roleEnum = z.enum(['ADMIN', 'USER']);
+
   public static userMetaSchema = z.object({
     id: z.string(),
     email: z.string(),
@@ -12,7 +14,10 @@ export abstract class UserSchema {
 
   public static getAllUsers: FastifySchema = {
     response: {
-      200: z.array(UserSchema.userMetaSchema),
+      200: CommonSchema.resultWithTotal({
+        ...UserSchema.userMetaSchema.shape,
+        role: this.roleEnum,
+      }),
     },
   } as const;
 
@@ -36,7 +41,7 @@ export abstract class UserSchema {
       email: z.string().email(),
       firstName: z.string(),
       lastName: z.string(),
-      role: z.enum(['ADMIN', 'USER']),
+      role: this.roleEnum,
       orgId: z.string(),
     }),
     response: {
@@ -57,7 +62,7 @@ export abstract class UserSchema {
   public static me: FastifySchema = {
     response: {
       200: UserSchema.userMetaSchema.extend({
-        role: z.enum(['ADMIN', 'USER']),
+        role: this.roleEnum,
         scopes: z.array(z.string()),
       }),
     },

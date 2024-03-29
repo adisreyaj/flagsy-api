@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { randomBytes } from 'node:crypto';
 import { Handler } from '../types/handler.type';
 import { AddUserToOrgRouteInterface } from '../types/user.type';
+import { ReqResUtil } from '../util/reqres.util';
 
 export class UsersHandler {
   public constructor(private app: FastifyInstance) {
@@ -9,15 +10,19 @@ export class UsersHandler {
   }
 
   public getAll: Handler = async (_request, reply) => {
-    const users = await this.app.prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-      },
-    });
-    reply.send(users);
+    const [users, count] = await this.app.prisma.$transaction([
+      this.app.prisma.user.findMany({
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+        },
+      }),
+      this.app.prisma.user.count(),
+    ]);
+    reply.send(ReqResUtil.resultWithTotal(users, count));
   };
 
   public addUserToOrg: Handler<AddUserToOrgRouteInterface> = async (

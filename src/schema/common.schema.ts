@@ -1,4 +1,4 @@
-import z from 'zod';
+import z, { ZodTypeAny } from 'zod';
 
 export abstract class CommonSchema {
   public static errors = {
@@ -26,4 +26,11 @@ export abstract class CommonSchema {
   public static search = {
     search: z.string().optional(),
   } as const;
+
+  public static resultWithTotal(data: Record<string, ZodTypeAny>) {
+    return z.object({
+      total: z.number(),
+      data: z.array<ZodTypeAny>(z.object(data)),
+    });
+  }
 }

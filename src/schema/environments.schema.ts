@@ -1,5 +1,6 @@
 import { FastifySchema } from 'fastify/types/schema';
 import z from 'zod';
+import { CommonSchema } from './common.schema';
 import { ProjectSchema } from './projects.schema';
 import { UserSchema } from './user.schema';
 
@@ -9,14 +10,12 @@ export abstract class EnvironmentsSchema {
       projectId: z.string().optional(),
     }),
     response: {
-      200: z.array(
-        z.object({
-          id: z.string(),
-          name: z.string(),
-          owner: UserSchema.userMetaSchema,
-          project: ProjectSchema.projectMetaSchema,
-        }),
-      ),
+      200: CommonSchema.resultWithTotal({
+        id: z.string(),
+        name: z.string(),
+        owner: UserSchema.userMetaSchema,
+        project: ProjectSchema.projectMetaSchema,
+      }),
     },
   } as const;
 

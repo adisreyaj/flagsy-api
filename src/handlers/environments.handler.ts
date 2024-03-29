@@ -4,6 +4,7 @@ import {
   GetAllEnvironmentRouteInterface,
 } from '../types/environments.type';
 import { Handler } from '../types/handler.type';
+import { ReqResUtil } from '../util/reqres.util';
 
 export class EnvironmentsHandler {
   public constructor(private app: FastifyInstance) {
@@ -36,32 +37,42 @@ export class EnvironmentsHandler {
   ) => {
     const { projectId } = request.query;
 
-    const environments = await this.app.prisma.environment.findMany({
-      where: {
-        org: {
-          id: request.user.orgId,
+    const [environments, total] = await this.app.prisma.$transaction([
+      this.app.prisma.environment.findMany({
+        where: {
+          org: {
+            id: request.user.orgId,
+          },
+          projectId,
         },
-        projectId,
-      },
-      select: {
-        id: true,
-        name: true,
-        owner: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
+        select: {
+          id: true,
+          name: true,
+          owner: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          project: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-        project: {
-          select: {
-            id: true,
-            name: true,
+      }),
+      this.app.prisma.environment.count({
+        where: {
+          org: {
+            id: request.user.orgId,
           },
+          projectId,
         },
-      },
-    });
-    reply.send(environments);
+      }),
+    ]);
+    reply.send(ReqResUtil.resultWithTotal(environments, total));
   };
 }

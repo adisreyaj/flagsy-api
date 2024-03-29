@@ -15,6 +15,7 @@ import { Handler } from '../types/handler.type';
 import { FastifyRequestWithAccessKey } from '../types/public-api.type';
 import { FeatureChangelogUtil } from '../util/feature-changelog.util';
 import { QueryParamParseUtil } from '../util/query-param-parse.util';
+import { ReqResUtil } from '../util/reqres.util';
 import { FeatureChangeLogType } from '.prisma/client';
 
 export class FeaturesHandler {
@@ -256,7 +257,9 @@ export class FeaturesHandler {
       limit: pagination.limit,
     });
 
-    reply.send(resultWithTotal);
+    reply.send(
+      ReqResUtil.resultWithTotal(resultWithTotal.data, resultWithTotal.total),
+    );
   };
 
   public getFeatureChangelog: Handler<GetFeatureChangeLogRouteInterface> =

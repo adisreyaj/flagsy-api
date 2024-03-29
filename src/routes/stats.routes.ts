@@ -1,11 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { Permission, Scope } from '../config/rbac.config';
-import { StatsHandler } from '../handlers/stats.handler';
 import { validateRbac } from '../plugins/rbac.plugin';
 
 export const STATS_ROUTES = async (app: FastifyInstance) => {
-  const handler = new StatsHandler(app);
-
   app.route({
     method: 'GET',
     url: '/overview',
@@ -21,6 +18,6 @@ export const STATS_ROUTES = async (app: FastifyInstance) => {
         ],
       ),
     ],
-    handler: handler.getAll,
+    handler: () => {},
   });
 };
