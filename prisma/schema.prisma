@@ -35,9 +35,10 @@ model Org {
   environments Environment[]
   features     Feature[]
 
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
   accessKeys AccessKey[]
+  changelogs FeatureChangeLog[]
 }
 
 model Project {
@@ -148,6 +149,9 @@ model FeatureChangeLog {
 
   owner   User   @relation(fields: [ownerId], references: [id])
   ownerId String
+
+  org   Org    @relation(fields: [orgId], references: [id])
+  orgId String
 
   createdAt DateTime @default(now())
 }

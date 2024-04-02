@@ -49,6 +49,8 @@ export class FeatureChangelogService {
   public async logCreateFeature(data: UpdateFeatureLogArgs) {
     return this.app.prisma.featureChangeLog.create({
       data: {
+        orgId: data.orgId,
+        projectId: data.projectId,
         featureId: data.featureId,
         ownerId: data.ownerId,
         change: data.changeData ?? Prisma.JsonNull,
@@ -60,6 +62,8 @@ export class FeatureChangelogService {
   public async logDeleteFeature(data: UpdateFeatureLogArgs) {
     return this.app.prisma.featureChangeLog.create({
       data: {
+        orgId: data.orgId,
+        projectId: data.projectId,
         featureId: data.featureId,
         ownerId: data.ownerId,
         change: data.changeData ?? Prisma.JsonNull,
@@ -71,6 +75,8 @@ export class FeatureChangelogService {
   public async logUpdateFeature(data: UpdateFeatureLogArgs) {
     return this.app.prisma.featureChangeLog.create({
       data: {
+        orgId: data.orgId,
+        projectId: data.projectId,
         featureId: data.featureId,
         environmentId: data.environmentId,
         ownerId: data.ownerId,
@@ -82,6 +88,8 @@ export class FeatureChangelogService {
 }
 
 export interface UpdateFeatureLogArgs {
+  orgId: string;
+  projectId: string;
   environmentId?: string;
   featureId: string;
   ownerId: string;

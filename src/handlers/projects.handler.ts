@@ -63,7 +63,9 @@ export class ProjectsHandler {
       }),
       this.app.prisma.project.count({
         where: {
-          ownerId: request.user.userId,
+          org: {
+            id: request.user.orgId,
+          },
         },
       }),
     ]);

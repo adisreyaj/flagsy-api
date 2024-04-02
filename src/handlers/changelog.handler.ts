@@ -34,11 +34,10 @@ export class ChangelogHandler {
       },
     );
 
-    console.log(sort, pagination, filters);
-
     const [changeLogs, total] = await this.app.prisma.$transaction([
       this.app.prisma.featureChangeLog.findMany({
         where: {
+          orgId: request.user.orgId,
           ...(filters?.['environment'] !== undefined
             ? {
                 environment: {
@@ -94,6 +93,7 @@ export class ChangelogHandler {
       }),
       this.app.prisma.featureChangeLog.count({
         where: {
+          orgId: request.user.orgId,
           ...(filters?.['environmentIds'] !== undefined
             ? {
                 environment: {

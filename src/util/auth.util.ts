@@ -9,13 +9,19 @@ export abstract class AuthUtil {
     return reply.setCookie('token', jwt);
   };
 
-  public static generateJWT = async (
-    reply: FastifyReply,
-    userId: string,
-    orgId: string,
-    roles: string[] = [],
-    scopes: string[] = [],
-  ): Promise<string> => {
+  public static generateJWT = async ({
+    reply,
+    userId,
+    orgId,
+    roles = [],
+    scopes = [],
+  }: {
+    reply: FastifyReply;
+    userId: string;
+    orgId: string;
+    roles?: string[];
+    scopes?: string[];
+  }): Promise<string> => {
     return await reply.jwtSign({
       userId: userId,
       orgId: orgId,

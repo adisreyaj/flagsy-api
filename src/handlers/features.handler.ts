@@ -16,7 +16,6 @@ import { FastifyRequestWithAccessKey } from '../types/public-api.type';
 import { FeatureChangelogUtil } from '../util/feature-changelog.util';
 import { QueryParamParseUtil } from '../util/query-param-parse.util';
 import { ReqResUtil } from '../util/reqres.util';
-import { FeatureChangeLogType } from '.prisma/client';
 
 export class FeaturesHandler {
   #changeLogService: FeatureChangelogService;
@@ -68,6 +67,8 @@ export class FeaturesHandler {
         await this.#changeLogService.logCreateFeature({
           featureId: feature.id,
           ownerId: request.user.userId,
+          orgId: request.user.orgId,
+          projectId,
         });
         return feature;
       });
@@ -159,14 +160,17 @@ export class FeaturesHandler {
           },
           select: {
             id: true,
+            projectId: true,
           },
         });
 
         const prevValueOfFeature =
-          savedFeature.environmentOverrides?.[0]?.value ?? savedFeature.value;
+          savedFeature.environmentOverrides![0]?.value ?? savedFeature.value;
 
         if (environmentId !== undefined && prevValueOfFeature !== value) {
           await this.#changeLogService.logUpdateFeature({
+            orgId: request.user.orgId,
+            projectId: updatedFeature.projectId,
             environmentId: environmentId,
             featureId: savedFeature.id,
             changeData: FeatureChangelogUtil.buildChangeData(
@@ -285,23 +289,39 @@ export class FeaturesHandler {
     const { featureId } = request.params;
 
     try {
-      await this.app.prisma.$transaction([
-        this.app.prisma.feature.update({
+      const savedFeature = await this.app.prisma.feature.findUnique({
+        where: {
+          id: featureId,
+        },
+        select: {
+          id: true,
+          projectId: true,
+        },
+      });
+
+      if (!savedFeature) {
+        return reply.status(404).send({
+          message: 'Feature not found!',
+        });
+      }
+
+      await this.app.prisma.$transaction(async () => {
+        await this.app.prisma.feature.update({
           where: {
             id: featureId,
           },
           data: {
             deleted: true,
           },
-        }),
-        this.app.prisma.featureChangeLog.create({
-          data: {
-            featureId: featureId,
-            ownerId: request.user.userId,
-            type: FeatureChangeLogType.DELETE,
-          },
-        }),
-      ]);
+        });
+        await this.#changeLogService.logDeleteFeature({
+          orgId: request.user.orgId,
+          projectId: savedFeature.projectId,
+          featureId: featureId,
+          ownerId: request.user.userId,
+        });
+        return;
+      });
 
       reply.status(204).send();
     } catch (e) {

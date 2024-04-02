@@ -29,7 +29,9 @@ export class UsersHandler {
     request,
     reply,
   ) => {
-    const { email, firstName, lastName, role, orgId } = request.body;
+    const { email, firstName, lastName, role } = request.body;
+    // User can only be added to their own org
+    const { orgId } = request.user;
     const user = await this.app.prisma.user.create({
       data: {
         email,

@@ -46,7 +46,11 @@ export class AuthHandler {
       },
     });
 
-    const jwt = await AuthUtil.generateJWT(reply, user.id, user.orgs?.[0].id);
+    const jwt = await AuthUtil.generateJWT({
+      reply: reply,
+      userId: user.id,
+      orgId: user.orgs![0].id,
+    });
     AuthUtil.setCookie(reply, jwt);
     reply.send(user);
   };
@@ -91,13 +95,14 @@ export class AuthHandler {
       });
     }
 
-    const jwt = await AuthUtil.generateJWT(
-      reply,
-      user.id,
-      user.orgs?.[0].id,
-      [user.role],
-      AuthUtil.getScopesForRoles([user.role]),
-    );
+    const scopes = AuthUtil.getScopesForRoles([user.role]);
+    const jwt = await AuthUtil.generateJWT({
+      reply: reply,
+      userId: user.id,
+      orgId: user.orgs![0].id,
+      roles: [user.role],
+      scopes: scopes,
+    });
 
     AuthUtil.setCookie(reply, jwt);
     reply.send({
@@ -105,6 +110,8 @@ export class AuthHandler {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      role: user.role,
+      scopes: scopes,
     });
   };
 

@@ -42,7 +42,6 @@ export abstract class UserSchema {
       firstName: z.string(),
       lastName: z.string(),
       role: this.roleEnum,
-      orgId: z.string(),
     }),
     response: {
       200: UserSchema.userMetaSchema,
@@ -55,7 +54,10 @@ export abstract class UserSchema {
       password: z.string(),
     }),
     response: {
-      200: UserSchema.userMetaSchema,
+      200: UserSchema.userMetaSchema.extend({
+        role: this.roleEnum,
+        scopes: z.array(z.string()),
+      }),
     },
   } as const;
 
