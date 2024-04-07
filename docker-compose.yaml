@@ -4,13 +4,13 @@ services:
   app:
     build: .
     ports:
-      - "${APP_PORT}:3000"
+      - "${PORT}:3000"
     volumes:
-      - .:/app
+      - ./:/app
     command: npm start
     environment:
       NODE_ENV: development
-      PORT: $APP_PORT
+      PORT: $PORT
       DATABASE_URL: $DATABASE_URL
       JWT_SECRET: $JWT_SECRET
       COOKIE_SECRET: $COOKIE_SECRET
