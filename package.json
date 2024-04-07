@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && npm run prisma:migrate:prod",
     "start": "node dist/src/index.js",
     "dev": "nodemon src/index.ts",
     "prisma:migrate:dev": "prisma migrate dev",
