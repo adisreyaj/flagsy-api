@@ -11,9 +11,3 @@ COPY . .
 
 RUN npm run prod
 RUN npm run build
-
-# Expose the port the app runs in
-EXPOSE 3000
-
-# Serve the app
-CMD ["npm", "start"]
