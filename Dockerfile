@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json /app
 
 # Get all the code needed to run the app
-COPY . .
+COPY . /app
 
-RUN npm run prod
+RUN npm install
 RUN npm run build

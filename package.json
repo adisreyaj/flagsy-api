@@ -4,13 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json && npm run prisma:migrate:prod",
+    "build": "tsc -p tsconfig.json && npm run prisma:prod",
     "start": "node dist/src/index.js",
     "dev": "nodemon src/index.ts",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:generate": "prisma generate",
-    "prod": "npm i && npm run prisma:migrate:prod && npm run prisma:generate"
+    "prisma:prod": "npm run prisma:migrate:prod && npm run prisma:generate"
   },
   "keywords": [],
   "author": {
