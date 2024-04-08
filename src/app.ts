@@ -53,7 +53,7 @@ export class App {
 
   async start(): Promise<FastifyInstance> {
     await this.init();
-    await this.app.listen({ port: this.app.config.PORT });
+    await this.app.listen({ port: this.app.config.PORT, host: '0.0.0.0' });
     return this.app;
   }
 
